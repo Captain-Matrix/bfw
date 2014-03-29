@@ -33,8 +33,9 @@ static int
 nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	     struct nfq_data *nfa, void *data)
 {
-  int i, j = 0, id = 0, sport, dport, ifin, ifout, size =
+  int i, j = 0, id = 0, ifin, ifout, size =
     nfq_get_payload (nfa, &raw_packet);
+    uint16_t sport,dport;
   char *upperlayers;
   struct nfqnl_msg_packet_hdr *ph;
   meta_data M;
@@ -52,11 +53,11 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
       if (M.layer4 == TCP)
 	{
 	  M.tcp_header =
-	    (struct tcphdr *) (raw_packet + (M.ip_header->ihl << 2));
+	    (struct tcphdr *) raw_packet + (M.ip_header->ihl << 2);
 	  upperlayers = (char *) M.tcp_header + (sizeof (struct tcphdr));
 	  size -= sizeof (struct tcphdr);
-	  sport = ntohs (M.tcp_header->source);
-	  dport = ntohs (M.tcp_header->dest);
+	  sport = ntohs(M.tcp_header->source);
+	  dport = ntohs(M.tcp_header->dest);
 	}
       else if (M.layer4 == UDP)
 	{
@@ -81,7 +82,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	    }
 	  else
 	    {
-	      printf ("\t\t%s \t\tEGRESS: %s\tL4:%d\n%s:%d ---> %s:%d\n\n",
+	      printf ("\t\t%s \t\tEGRESS: %s\tL4:%0x\n%s:%d ---> %s:%d\n\n",
 		      ctime (&M.stamp), M.interface, ntohs (M.layer4),
 		      int_to_ip (ntohl (M.ip_header->saddr)), sport,
 		      int_to_ip (ntohl (M.ip_header->daddr)), dport);
@@ -98,9 +99,9 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	    }
 	  else
 	    {
-	      printf ("\t\t%s \t\tINGRESS: %s\tL4:%d\n%s:%d ---> %s:%d\n\n",
+	      printf ("\t\t%s \t\tINGRESS: %s\tL4:%0x\n%s:%0x ---> %s:%d\n\n",
 		      ctime (&M.stamp), M.interface, ntohs (M.layer4),
-		      int_to_ip (ntohl (M.ip_header->saddr)), sport,
+		      int_to_ip (ntohl (M.ip_header->saddr)), ntohl(M.tcp_header->source),
 		      int_to_ip (ntohl (M.ip_header->daddr)), dport);
 	    }
 	}
@@ -118,7 +119,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	}
       fwrite (&M.size, sizeof (M.size), 1, learn_log);
       fwrite (&M.direction, sizeof (M.direction), 1, learn_log);
-      fwrite (ntohs (M.layer4), sizeof (M.layer4), 1, learn_log);
+      fwrite (&M.layer4, sizeof (M.layer4), 1, learn_log);
       fwrite (&M.stamp, sizeof (time_t), 1, learn_log);
       fwrite (&M.interface, sizeof (char), IFNAMSIZ, learn_log);
       fwrite (M.ip_header, sizeof (struct iphdr), 1, learn_log);
