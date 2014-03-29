@@ -1,0 +1,6 @@
+this project is under active development
+
+bfw is a firewall that generates rules based on traffic observation.
+
+other than the obvious, I have planned lua scripting support and web interface to monitor live traffic.
+it utilizes libnetfilter_queues, so you will need that library and kernel support in order to build and run it.
