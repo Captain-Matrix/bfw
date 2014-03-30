@@ -17,8 +17,8 @@ int
 main ()
 {
   meta_data M;
-  int  sport, dport,i;
-  if (!(learn_log = fopen ("./bfw_learn.log", "rb")) )
+  int sport, dport, i;
+  if (!(learn_log = fopen ("./bfw_learn.log", "rb")))
     {
       fprintf (stderr, "Error opening learning log");
       exit (1);
@@ -37,20 +37,21 @@ main ()
       fread (&M.stamp, sizeof (time_t), 1, learn_log);
       fread (&M.interface, sizeof (char), IFNAMSIZ, learn_log);
       fread (M.ip_header, sizeof (struct iphdr), 1, learn_log);
-      if (ntohs(M.layer4) == TCP)
+      if (ntohs (M.layer4) == TCP)
 	{
 	  fread (M.tcp_header, sizeof (struct tcphdr), 1, learn_log);
-	  sport = ntohs(M.tcp_header->source);
-	  dport = ntohs(M.tcp_header->dest);
+	  sport = ntohs (M.tcp_header->source);
+	  dport = ntohs (M.tcp_header->dest);
 	}
-      else if (ntohs(M.layer4) == UDP)
+      else if (ntohs (M.layer4) == UDP)
 	{
 	  fread (M.udp_header, sizeof (struct udphdr), 1, learn_log);
 	  sport = ntohs (M.udp_header->source);
 	  dport = ntohs (M.udp_header->dest);
 	}
       /////////////////////////////////////////////////////////////////
-      printf("_____________________________________________________________\n");
+      printf
+	("_____________________________________________________________\n");
       if (M.direction == EGRESS)
 	{			//egress    
 
