@@ -101,7 +101,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	    {
 	      printf ("\t\t%s \t\tINGRESS: %s\tL4:%0x\n%s:%0x ---> %s:%d\n\n",
 		      ctime (&M.stamp), M.interface, ntohs (M.layer4),
-		      int_to_ip (ntohl (M.ip_header->saddr)), ntohl(M.tcp_header->source),
+		      int_to_ip (ntohl (M.ip_header->saddr)), sport,
 		      int_to_ip (ntohl (M.ip_header->daddr)), dport);
 	    }
 	}
@@ -237,7 +237,7 @@ CATCH_ALL (int signal)
       exit (1);
       break;
     case SIGCHLD:
-      printf ("Child process exited.\n");
+      printf ("process terminated.\n");
       break;
     default:
       break;
