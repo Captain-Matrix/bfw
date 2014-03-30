@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <linux/types.h>
+#include <string.h>
 #include "bfw.h"
 #include "utils.h"
 
@@ -15,8 +17,8 @@ int
 main ()
 {
   meta_data M;
-  int sport, dport;
-  if ((learn_log = fopen ("./bfw_learn.log", "rb")) == -1)
+  int  sport, dport,i;
+  if (!(learn_log = fopen ("./bfw_learn.log", "rb")) )
     {
       fprintf (stderr, "Error opening learning log");
       exit (1);
@@ -35,23 +37,24 @@ main ()
       fread (&M.stamp, sizeof (time_t), 1, learn_log);
       fread (&M.interface, sizeof (char), IFNAMSIZ, learn_log);
       fread (M.ip_header, sizeof (struct iphdr), 1, learn_log);
-      if (M.layer4 == TCP)
+      if (ntohs(M.layer4) == TCP)
 	{
 	  fread (M.tcp_header, sizeof (struct tcphdr), 1, learn_log);
-	  sport = M.tcp_header->source;
-	  dport = M.tcp_header->dest;
+	  sport = ntohs(M.tcp_header->source);
+	  dport = ntohs(M.tcp_header->dest);
 	}
-      else if (M.layer4 == UDP)
+      else if (ntohs(M.layer4) == UDP)
 	{
 	  fread (M.udp_header, sizeof (struct udphdr), 1, learn_log);
 	  sport = ntohs (M.udp_header->source);
 	  dport = ntohs (M.udp_header->dest);
 	}
       /////////////////////////////////////////////////////////////////
+      printf("_____________________________________________________________\n");
       if (M.direction == EGRESS)
 	{			//egress    
 
-	  printf ("\t\t%s \t\tEGRESS: %s\tL4:%0x\n%s:%d ---> %s:%d\n\n",
+	  printf ("\t\t%s \t\tEGRESS: %s\tL4:%0x\n\t%s:%d ---> %s:%d\n",
 		  ctime (&M.stamp), M.interface, ntohs (M.layer4),
 		  int_to_ip (ntohl (M.ip_header->saddr)), sport,
 		  int_to_ip (ntohl (M.ip_header->daddr)), dport);
@@ -63,7 +66,7 @@ main ()
 	{			//ingress
 
 
-	  printf ("\t\t%s \t\tINGRESS: %s\tL4:%0x\n%s:%d ---> %s:%d\n\n",
+	  printf ("\t\t%s \t\tINGRESS: %s\tL4:%0x\n\t%s:%d ---> %s:%d\n",
 		  ctime (&M.stamp), M.interface, ntohs (M.layer4),
 		  int_to_ip (ntohl (M.ip_header->saddr)), sport,
 		  int_to_ip (ntohl (M.ip_header->daddr)), dport);

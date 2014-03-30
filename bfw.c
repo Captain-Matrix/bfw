@@ -8,7 +8,7 @@
 #include<errno.h>
 #include<sys/ioctl.h>
 #include<net/if.h>
-
+#include <string.h>
 #include <limits.h>
 #include <time.h>
 #include <linux/netfilter.h>
@@ -29,44 +29,45 @@
 #include "bfw.h"
 #include "utils.h"
 
+int debug=0;
 static int
 nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	     struct nfq_data *nfa, void *data)
 {
   int i, j = 0, id = 0, ifin, ifout, size =
     nfq_get_payload (nfa, &raw_packet);
-    uint16_t sport,dport;
+  uint16_t sport,dport;
   char *upperlayers;
   struct nfqnl_msg_packet_hdr *ph;
   meta_data M;
+  memset(&M,0,sizeof(meta_data));
   ph = nfq_get_msg_packet_hdr (nfa);
+        id = ntohl (ph->packet_id);
+
   if (ph)
     {
-      printf ("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+if(debug) printf ("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
       M.size = size;
       M.stamp = time (NULL);
       ifout = nfq_get_outdev (nfa);
       ifin = nfq_get_indev (nfa);
-      id = ntohl (ph->packet_id);
       M.ip_header = (struct iphdr *) raw_packet;
       M.layer4 = M.ip_header->protocol;
-      if (M.layer4 == TCP)
+      if (ntohs(M.layer4) == TCP)
 	{
 	  M.tcp_header =
-	    (struct tcphdr *) raw_packet + (M.ip_header->ihl << 2);
+	    (struct tcphdr *) (raw_packet + (M.ip_header->ihl <<2 ));
 	  upperlayers = (char *) M.tcp_header + (sizeof (struct tcphdr));
-	  size -= sizeof (struct tcphdr);
 	  sport = ntohs(M.tcp_header->source);
 	  dport = ntohs(M.tcp_header->dest);
 	}
-      else if (M.layer4 == UDP)
+      else if (ntohs(M.layer4) == UDP)
 	{
 	  M.udp_header =
 	    (struct udphdr *) (raw_packet + (M.ip_header->ihl << 2));
 	  upperlayers = (char *) M.udp_header + (sizeof (struct udphdr));
-	  size -= sizeof (struct udphdr);
-	  sport = ntohs (M.udp_header->source);
-	  dport = ntohs (M.udp_header->dest);
+	  sport = ntohs(M.udp_header->source);
+	  dport = ntohs(M.udp_header->dest);
 	}
       else
 	{
@@ -82,14 +83,16 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	    }
 	  else
 	    {
+	      if(debug){
 	      printf ("\t\t%s \t\tEGRESS: %s\tL4:%0x\n%s:%d ---> %s:%d\n\n",
 		      ctime (&M.stamp), M.interface, ntohs (M.layer4),
 		      int_to_ip (ntohl (M.ip_header->saddr)), sport,
 		      int_to_ip (ntohl (M.ip_header->daddr)), dport);
+	      }
 	    }
 
 
-	}
+	}else
       if (ifin > 0)
 	{			//ingress
 	  M.direction = INGRESS;
@@ -99,16 +102,19 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	    }
 	  else
 	    {
-	      printf ("\t\t%s \t\tINGRESS: %s\tL4:%0x\n%s:%0x ---> %s:%d\n\n",
+	      if(debug){
+	      printf ("\t\t%s \t\tINGRESS: %s\tL4:%0x\n%s:%d ---> %s:%d\n\n",
 		      ctime (&M.stamp), M.interface, ntohs (M.layer4),
 		      int_to_ip (ntohl (M.ip_header->saddr)), sport,
 		      int_to_ip (ntohl (M.ip_header->daddr)), dport);
+	      }
 	    }
 	}
-      for (i = 0, j = 0; i < size; i++, j++)
+	if(debug){
+      for (i = 0, j = 0; i < M.size; i++, j++)
 	{
-	  if (isprint (upperlayers[i]))
-	    printf ("%c", upperlayers[i]);
+	  if (isprint (raw_packet[i]))
+	    printf ("%c", raw_packet[i]);
 	  else
 	    printf (".");
 	  if (j == 80)
@@ -117,16 +123,17 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	      printf ("\n");
 	    }
 	}
+	}
       fwrite (&M.size, sizeof (M.size), 1, learn_log);
       fwrite (&M.direction, sizeof (M.direction), 1, learn_log);
       fwrite (&M.layer4, sizeof (M.layer4), 1, learn_log);
       fwrite (&M.stamp, sizeof (time_t), 1, learn_log);
       fwrite (&M.interface, sizeof (char), IFNAMSIZ, learn_log);
       fwrite (M.ip_header, sizeof (struct iphdr), 1, learn_log);
-      if (M.layer4 == TCP)
+      if (ntohs(M.layer4) == TCP)
 	fwrite (M.tcp_header, sizeof (struct tcphdr), 1, learn_log);
-      else if (M.layer4 == UDP)
-	fwrite (M.udp_header, sizeof (struct udphdr), 1, learn_log);
+      else if (ntohs(M.layer4) == UDP)
+ 	fwrite (M.udp_header, sizeof (struct udphdr), 1, learn_log);
 
     }
   nfq_set_verdict (qh, id, NF_ACCEPT, size, raw_packet);
@@ -140,7 +147,7 @@ start_fw ()
   char buf[4096];
   struct nfq_handle *h;
   struct nfq_q_handle *qh;
-  if ((learn_log = fopen ("./bfw_learn.log", "ab+")) == -1)
+  if (!(learn_log = fopen ("./bfw_learn.log", "ab+")))
     {
       fprintf (stderr, "Error opening learning log file\n");
       iptables_off ();
@@ -213,7 +220,7 @@ start_fw ()
 void
 CATCH_ALL (int signal)
 {
-  printf
+if(debug)  printf
     ("\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^SIGNAL(%d) CAUGHT^^^^^^^^^^^^^^^^^^^^^^^^\n",
      signal);
   fflush (stdout);
