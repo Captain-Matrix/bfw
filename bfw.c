@@ -29,7 +29,7 @@
 #include "bfw.h"
 #include "utils.h"
 
-int debug = 0;
+int debug = 1;
 static int
 nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	     struct nfq_data *nfa, void *data)
@@ -48,11 +48,11 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
     {
       if (debug)
 	printf
-	  ("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+	  ("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");fflush(stdout);
       M.size = size;
       M.stamp = time (NULL);
-      ifout = nfq_get_outdev (nfa);
-      ifin = nfq_get_indev (nfa);
+      ifout = nfq_get_physoutdev (nfa);
+      ifin = nfq_get_physindev (nfa);
       M.ip_header = (struct iphdr *) raw_packet;
       M.layer4 = M.ip_header->protocol;
       if (ntohs (M.layer4) == TCP)
@@ -79,7 +79,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
       if (ifout > 0)
 	{			//egress
 	  M.direction = EGRESS;
-	  if (nfq_get_outdev_name (nlfh, nfa, (char *) &M.interface) == -1)
+	  if (nfq_get_physoutdev_name (nlfh, nfa, (char *) &M.interface) == -1)
 	    {
 	      perror ("Error fetching egress interface name: ");
 	    }
@@ -91,16 +91,16 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 		    ("\t\t%s \t\tEGRESS: %s\tL4:%0x\n%s:%d ---> %s:%d\n\n",
 		     ctime (&M.stamp), M.interface, ntohs (M.layer4),
 		     int_to_ip (ntohl (M.ip_header->saddr)), sport,
-		     int_to_ip (ntohl (M.ip_header->daddr)), dport);
+		     int_to_ip (ntohl (M.ip_header->daddr)), dport);fflush(stdout);
 		}
 	    }
 
 
 	}
-      else if (ifin > 0)
+       if (ifin > 0)
 	{			//ingress
 	  M.direction = INGRESS;
-	  if (nfq_get_indev_name (nlfh, nfa, (char *) &M.interface) == -1)
+	  if (nfq_get_physindev_name (nlfh, nfa, (char *) &M.interface) == -1)
 	    {
 	      perror ("Error fetching ingress interface name: ");
 	    }
@@ -112,7 +112,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 		    ("\t\t%s \t\tINGRESS: %s\tL4:%0x\n%s:%d ---> %s:%d\n\n",
 		     ctime (&M.stamp), M.interface, ntohs (M.layer4),
 		     int_to_ip (ntohl (M.ip_header->saddr)), sport,
-		     int_to_ip (ntohl (M.ip_header->daddr)), dport);
+		     int_to_ip (ntohl (M.ip_header->daddr)), dport);fflush(stdout);
 		}
 	    }
 	}
@@ -152,8 +152,7 @@ start_fw ()
   struct nfnl_handle *nh;
   int fd, rv;
   char buf[4096];
-  struct nfq_handle *h;
-  struct nfq_q_handle *qh;
+
   if (!(learn_log = fopen ("./bfw_learn.log", "ab+")))
     {
       fprintf (stderr, "Error opening learning log file\n");
@@ -187,7 +186,7 @@ start_fw ()
       return -1;
     }
 
-  printf ("setting copy_packet mode\n");
+  printf ("Started bfw...\n");
   if (nfq_set_mode (qh, NFQNL_COPY_PACKET, 0xffff) < 0)
     {
       fprintf (stderr, "can't set packet_copy mode\n");
@@ -209,21 +208,26 @@ start_fw ()
       rv = recv (fd, buf, sizeof (buf), 0);
       if (rv > 0)
 	{
-	  // triggers an associated callback for the given packet received from the queue.
-	  // Packets can be read from the queue using nfq_fd() and recv().
+	  
 	  nfq_handle_packet (h, buf, rv);
 	}
 
     }
 
 
-  // unbinding before exit
-  printf ("NFQUEUE: unbinding from queue '%hd'\n", 0);
-  nfq_destroy_queue (qh);
-  nfq_close (h);
+  
+ die(0,"Normal exit.");
 
 }
+void die(int code,char *msg){
+    fprintf(stderr,"Exit with code 0x%x :%s\n\a",code,msg);
 
+  iptables_off();
+   nfq_destroy_queue (qh);
+  nfq_close (h);
+  fclose(learn_log);
+  exit(code);
+}
 void
 CATCH_ALL (int signal)
 {
@@ -235,11 +239,9 @@ CATCH_ALL (int signal)
   switch (signal)
     {
     case SIGSEGV:
-      printf
-	("Segmentation fault detected,please contact developer and/or maintainer to report a bug.\a\n");
-      iptables_off ();
-      exit (1);
-      break;
+      die
+	(11,"Segmentation fault detected,please contact developer and/or maintainer to report a bug.");
+         break;
     case SIGINT:
     case SIGTERM:
       iptables_off ();
@@ -247,12 +249,10 @@ CATCH_ALL (int signal)
       exit (0);
       break;
     case SIGKILL:
-      printf ("Program killed\n");
-      iptables_off ();
-      exit (1);
+      die(signal,"Program killed!!.");
       break;
     case SIGCHLD:
-      printf ("process terminated.\n");
+     if(debug) printf ("process terminated.\n");
       break;
     default:
       break;
@@ -266,11 +266,12 @@ main ()
   int i;
   if (getuid () != 0)
     {
-      printf ("This program needs to run as root to function properly.\r\n");
-      exit (1);
+      die(1,"This program needs to run as root to function properly.\r\n");
+      
     }
   for (i; i < 32; i++)
     signal (i, CATCH_ALL);
   iptables_on ();
-  start_fw ();
+  if(!start_fw ())die(0xDEAD,"Error during startup.");
+  
 }
