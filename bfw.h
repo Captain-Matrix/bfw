@@ -14,9 +14,9 @@
 #define UDP 0x1100
 static unsigned char *raw_packet;
 static struct nlif_handle *nlfh;
-  struct nfq_handle *h;
-  struct nfq_q_handle *qh;
-  
+struct nfq_handle *h;
+struct nfq_q_handle *qh;
+
 static FILE *learn_log;
 struct meta_data
 {
@@ -30,5 +30,5 @@ struct meta_data
   struct udphdr *udp_header;
 };
 typedef struct meta_data meta_data;
-void die(int code,char *msg);
+void die (int code, char *msg);
 #endif

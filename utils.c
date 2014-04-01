@@ -7,27 +7,31 @@
 #include "bfw.h"
 #include <termcap.h>
 
-void cls()
+void
+cls ()
 {
-char buf[1024];
-char *str;
+  char buf[1024];
+  char *str;
 
-tgetent(buf, getenv("TERM"));
-str = tgetstr("cl", NULL);
-fputs(str, stdout);
-} 
-int gettc()
-{
-    struct termios oldt,newt;
-    int ch;
-    tcgetattr( STDIN_FILENO, &oldt );
-    newt = oldt;
-    newt.c_lflag &= ~( ICANON  );
-    tcsetattr( STDIN_FILENO, TCSANOW, &newt );
-    ch = getchar();
-    tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
-    return ch;
+  tgetent (buf, getenv ("TERM"));
+  str = tgetstr ("cl", NULL);
+  fputs (str, stdout);
 }
+
+int
+gettc ()
+{
+  struct termios oldt, newt;
+  int ch;
+  tcgetattr (STDIN_FILENO, &oldt);
+  newt = oldt;
+  newt.c_lflag &= ~(ICANON);
+  tcsetattr (STDIN_FILENO, TCSANOW, &newt);
+  ch = getchar ();
+  tcsetattr (STDIN_FILENO, TCSANOW, &oldt);
+  return ch;
+}
+
 char *
 int_to_ip (int ip)
 {

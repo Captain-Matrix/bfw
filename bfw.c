@@ -48,7 +48,8 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
     {
       if (debug)
 	printf
-	  ("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");fflush(stdout);
+	  ("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+      fflush (stdout);
       M.size = size;
       M.stamp = time (NULL);
       ifout = nfq_get_outdev (nfa);
@@ -91,7 +92,8 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 		    ("\t\t%s \t\tEGRESS: %s\tL4:%0x\n%s:%d ---> %s:%d\n\n",
 		     ctime (&M.stamp), M.interface, ntohs (M.layer4),
 		     int_to_ip (ntohl (M.ip_header->saddr)), sport,
-		     int_to_ip (ntohl (M.ip_header->daddr)), dport);fflush(stdout);
+		     int_to_ip (ntohl (M.ip_header->daddr)), dport);
+		  fflush (stdout);
 		}
 	    }
 
@@ -112,25 +114,26 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 		    ("\t\t%s \t\tINGRESS: %s\tL4:%0x\n%s:%d ---> %s:%d\n\n",
 		     ctime (&M.stamp), M.interface, ntohs (M.layer4),
 		     int_to_ip (ntohl (M.ip_header->saddr)), sport,
-		     int_to_ip (ntohl (M.ip_header->daddr)), dport);fflush(stdout);
+		     int_to_ip (ntohl (M.ip_header->daddr)), dport);
+		  fflush (stdout);
 		}
 	    }
 	}
 //       if (debug)
-// 	{
-// 	  for (i = 0, j = 0; i < M.size; i++, j++)
-// 	    {
-// 	      if (isprint (raw_packet[i]))
-// 		printf ("%c", raw_packet[i]);
-// 	      else
-// 		printf (".");
-// 	      if (j == 80)
-// 		{
-// 		  j = 0;
-// 		  printf ("\n");
-// 		}
-// 	    }
-// 	}
+//      {
+//        for (i = 0, j = 0; i < M.size; i++, j++)
+//          {
+//            if (isprint (raw_packet[i]))
+//              printf ("%c", raw_packet[i]);
+//            else
+//              printf (".");
+//            if (j == 80)
+//              {
+//                j = 0;
+//                printf ("\n");
+//              }
+//          }
+//      }
       fwrite (&M.size, sizeof (M.size), 1, learn_log);
       fwrite (&M.direction, sizeof (M.direction), 1, learn_log);
       fwrite (&M.layer4, sizeof (M.layer4), 1, learn_log);
@@ -208,26 +211,30 @@ start_fw ()
       rv = recv (fd, buf, sizeof (buf), 0);
       if (rv > 0)
 	{
-	  
+
 	  nfq_handle_packet (h, buf, rv);
 	}
 
     }
 
 
-  
- die(0,"Normal exit.");
+
+  die (0, "Normal exit.");
 
 }
-void die(int code,char *msg){
-    fprintf(stderr,"Exit with code 0x%x :%s\n\a",code,msg);
 
-  iptables_off();
-   nfq_destroy_queue (qh);
+void
+die (int code, char *msg)
+{
+  fprintf (stderr, "Exit with code 0x%x :%s\n\a", code, msg);
+
+  iptables_off ();
+  nfq_destroy_queue (qh);
   nfq_close (h);
-  fclose(learn_log);
-  exit(code);
+  fclose (learn_log);
+  exit (code);
 }
+
 void
 CATCH_ALL (int signal)
 {
@@ -240,8 +247,9 @@ CATCH_ALL (int signal)
     {
     case SIGSEGV:
       die
-	(11,"Segmentation fault detected,please contact developer and/or maintainer to report a bug.");
-         break;
+	(11,
+	 "Segmentation fault detected,please contact developer and/or maintainer to report a bug.");
+      break;
     case SIGINT:
     case SIGTERM:
       iptables_off ();
@@ -249,10 +257,11 @@ CATCH_ALL (int signal)
       exit (0);
       break;
     case SIGKILL:
-      die(signal,"Program killed!!.");
+      die (signal, "Program killed!!.");
       break;
     case SIGCHLD:
-     if(debug) printf ("process terminated.\n");
+      if (debug)
+	printf ("process terminated.\n");
       break;
     default:
       break;
@@ -266,12 +275,13 @@ main ()
   int i;
   if (getuid () != 0)
     {
-      die(1,"This program needs to run as root to function properly.\r\n");
-      
+      die (1, "This program needs to run as root to function properly.\r\n");
+
     }
   for (i; i < 32; i++)
     signal (i, CATCH_ALL);
   iptables_on ();
-  if(!start_fw ())die(0xDEAD,"Error during startup.");
-  
+  if (!start_fw ())
+    die (0xDEAD, "Error during startup.");
+
 }
