@@ -78,7 +78,10 @@ more (int index)
 	}
 
       printf
-	("%3d %6s  %s  %15s %15s %15s %15s %3s %5d %5d %4d %8s %2d:%2d %5s  %7s\n",
+	("%3d"
+	" %6s  %s  %15s %15s %15s"
+	" %15s %3s %5d %5d %4d %8s %2d:%2d "
+	"%5s  %7s\n",
 	 r->number, r->action ? "PERMIT" : "DENY", l3, int_to_ip (r->src),
 	 int_to_ip (r->src_mask), int_to_ip (r->dest),
 	 int_to_ip (r->dest_mask), l4, r->s_port, r->d_port, 0,
@@ -94,7 +97,56 @@ more (int index)
     }
   printf (PROMPT);
 }
+void summarize(){
+  int i=0;
+  float avgm,hundred=100,f_index=0;
+    struct tm *T1,*T2 ;
 
+  rule *rtmp,*rtmp2,*rtmp3;
+  rtmp=TAILQ_FIRST(&rule_head);
+  printf("Summarizing rules....\n");
+  avgm=hundred/rcount;
+  for (r_index=0,f_index; r_index < rcount ;f_index++, r_index++)
+    {
+      
+                  rtmp2 = TAILQ_NEXT (rtmp, entries);
+	      //T1=localtime (&rtmp->stamp);
+	    //  T2=localtime (&rtmp2->stamp);
+  for (i=r_index; i < rcount ; i++)
+    {
+
+      if(rtmp->action==rtmp2->action&&rtmp->L3==rtmp2->L3 &&
+	rtmp->src==rtmp2->src && rtmp->src_mask==rtmp2->src_mask && rtmp->dest==rtmp2->dest &&
+	rtmp->dest_mask==rtmp2->dest_mask&&rtmp->L4==rtmp2->L4&&rtmp->s_port==rtmp2->s_port &&
+	rtmp->d_port==rtmp2->d_port&&rtmp->direction==rtmp2->direction && 
+	//rtmp->hour==rtmp2->hour &&
+	//T1->tm_hour==T2->tm_hour &&
+	strncmp(rtmp->IF,rtmp2->IF,IFNAMSIZ)==0){
+	TAILQ_REMOVE(&rule_head, rtmp2, entries);
+          rtmp3 = TAILQ_NEXT (rtmp2, entries);
+	//T2=localtime (&rtmp2->stamp);
+      
+      free(rtmp2);
+      rtmp2=rtmp3;
+      printf("\r%.2f%% Done [%5d/%5d]",f_index*avgm,r_index,rcount);
+      
+      --rcount;
+      avgm=hundred/rcount;
+      
+      }else{
+            rtmp2 = TAILQ_NEXT (rtmp2, entries);
+	//T2=localtime (&rtmp2->stamp);
+      }
+    }
+      rtmp = TAILQ_NEXT (rtmp, entries);
+    }
+  rtmp=TAILQ_FIRST(&rule_head);
+  for(i=0;i<rcount;i++){
+    rtmp->number=i;
+      rtmp = TAILQ_NEXT (rtmp, entries);
+    }
+    r=TAILQ_FIRST(&rule_head);
+}
 void
 prompt ()
 {
@@ -121,13 +173,14 @@ prompt ()
 }
 
 void
-load ()
+load (char *path)
 {
   meta_data M;
   TAILQ_INIT (&rule_head);
-
+  memset(&M,0,sizeof(meta_data));
   int sport, dport, i;
-  if (!(learn_log = fopen ("./bfw_learn.log1", "rb")))
+  struct tm* T;
+  if (!(learn_log = fopen (path, "rb")))
     {
       fprintf (stderr, "Error opening learning log");
       exit (1);
@@ -164,8 +217,11 @@ load ()
       ++rcount;
 
       r->direction = M.direction;
-      snprintf (r->IF, IFNAMSIZ, "%s", M.interface);
+      memcpy (r->IF, M.interface,IFNAMSIZ);
+      r->IF[IFNAMSIZ]='\0';
       r->stamp = M.stamp;
+      T=localtime(&r->stamp);
+      r->hour=T->tm_hour;
       r->s_port = sport;
       r->d_port = dport;
       r->L4 = ntohs (M.layer4);
@@ -212,9 +268,14 @@ load ()
 }
 
 int
-main ()
+main (int argc, char **argv)
 {
-  load ();
+  if(argc<2){
+   printf("Please specify a log to process\n");
+    exit(1);
+  }
+  load (argv[1]);
+  summarize();
   printf ("Loaded %d rules....\n", rcount);
   prompt ();
 

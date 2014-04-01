@@ -18,7 +18,7 @@ char days[7][10] =
 
 struct rule
 {
-  unsigned int number;
+   int number;
   int action;
   int L3;
   uint32_t src;
@@ -30,6 +30,7 @@ struct rule
   uint16_t d_port;
   unsigned int bw;		//not using this field at the moment.
   time_t stamp;
+  int hour; //probably temporary for the sake of simpler summary
   char IF[IFNAMSIZ];
   int direction;
     TAILQ_ENTRY (rule) entries;
