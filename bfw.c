@@ -29,7 +29,7 @@
 #include "bfw.h"
 #include "utils.h"
 
-int debug = 1;
+int debug = 0;
 static int
 nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	     struct nfq_data *nfa, void *data)
@@ -51,8 +51,8 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	  ("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");fflush(stdout);
       M.size = size;
       M.stamp = time (NULL);
-      ifout = nfq_get_physoutdev (nfa);
-      ifin = nfq_get_physindev (nfa);
+      ifout = nfq_get_outdev (nfa);
+      ifin = nfq_get_indev (nfa);
       M.ip_header = (struct iphdr *) raw_packet;
       M.layer4 = M.ip_header->protocol;
       if (ntohs (M.layer4) == TCP)
@@ -79,7 +79,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
       if (ifout > 0)
 	{			//egress
 	  M.direction = EGRESS;
-	  if (nfq_get_physoutdev_name (nlfh, nfa, (char *) &M.interface) == -1)
+	  if (nfq_get_outdev_name (nlfh, nfa, (char *) &M.interface) == -1)
 	    {
 	      perror ("Error fetching egress interface name: ");
 	    }
@@ -97,10 +97,10 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 
 
 	}
-       if (ifin > 0)
+      else if (ifin > 0)
 	{			//ingress
 	  M.direction = INGRESS;
-	  if (nfq_get_physindev_name (nlfh, nfa, (char *) &M.interface) == -1)
+	  if (nfq_get_indev_name (nlfh, nfa, (char *) &M.interface) == -1)
 	    {
 	      perror ("Error fetching ingress interface name: ");
 	    }
@@ -116,21 +116,21 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 		}
 	    }
 	}
-      if (debug)
-	{
-	  for (i = 0, j = 0; i < M.size; i++, j++)
-	    {
-	      if (isprint (raw_packet[i]))
-		printf ("%c", raw_packet[i]);
-	      else
-		printf (".");
-	      if (j == 80)
-		{
-		  j = 0;
-		  printf ("\n");
-		}
-	    }
-	}
+//       if (debug)
+// 	{
+// 	  for (i = 0, j = 0; i < M.size; i++, j++)
+// 	    {
+// 	      if (isprint (raw_packet[i]))
+// 		printf ("%c", raw_packet[i]);
+// 	      else
+// 		printf (".");
+// 	      if (j == 80)
+// 		{
+// 		  j = 0;
+// 		  printf ("\n");
+// 		}
+// 	    }
+// 	}
       fwrite (&M.size, sizeof (M.size), 1, learn_log);
       fwrite (&M.direction, sizeof (M.direction), 1, learn_log);
       fwrite (&M.layer4, sizeof (M.layer4), 1, learn_log);
