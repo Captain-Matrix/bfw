@@ -1,6 +1,6 @@
 
 CC=gcc
-CFLAGS=  -p -g -lnetfilter_queue -lnfnetlink 
+CFLAGS=  -p -g -lnetfilter_queue -lnfnetlink -lpthread -ltinfo
 LDFLAGS=
 SOURCES=./bfw.c ./utils.c
 EXECUTABLE=bfw
