@@ -5,9 +5,11 @@ bfw is a firewall that generates rules based on traffic observation.
 other than the obvious, I have planned lua scripting support and web interface to monitor live traffic.
 it utilizes libnetfilter_queues, so you will need that library and kernel support in order to build and run it.
 other dependencies include libtinfo(comes with ncurses) and a nice dose of patience :)
-at the moment please build processlog program with the following cli,not integrated to main program yet:
 
-gcc -o processlog -ltinfo ./processlog.c ./utils.c
+to make program just type make.
+at the moment please build processlog program with the following command line , feature not integrated to main program yet:
+
+make processlog
 
 latest stable source for libnetfilter queue can be found at http://www.iptables.org/projects/libnetfilter_queue/downloads.html
 
