@@ -18,7 +18,7 @@ char days[7][10] =
 
 struct rule
 {
-   int number;
+  int number;
   int action;
   int L3;
   uint32_t src;
@@ -27,15 +27,17 @@ struct rule
   uint32_t dest_mask;
   int L4;
   uint16_t s_port;
+  uint16_t s_port_last;
   uint16_t d_port;
+  uint16_t d_port_last;
   unsigned int bw;		//not using this field at the moment.
-  time_t stamp;
-  int hour; //probably temporary for the sake of simpler summary
+  int hour, minute, dow;	//probably temporary for the sake of simpler summary
   char IF[IFNAMSIZ];
   int direction;
-    TAILQ_ENTRY (rule) entries;
+    CIRCLEQ_ENTRY (rule) entries;
 };
 typedef struct rule rule;
-TAILQ_HEAD (, rule) rule_head;
-
+CIRCLEQ_HEAD (, rule) rule_head;
+     void load (char *p);
+     void acl_load (char *path);
 #endif

@@ -12,6 +12,8 @@
 #define EGRESS 0
 #define TCP 0X600
 #define UDP 0x1100
+#define OTHER 0XFFFF
+
 static unsigned char *raw_packet;
 static struct nlif_handle *nlfh;
 struct nfq_handle *h;

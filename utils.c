@@ -3,9 +3,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <termios.h>
+#include <stdint.h>
 #include "utils.h"
 #include "bfw.h"
 #include <termcap.h>
+inline uint32_t
+match (uint32_t network, uint32_t acl, uint32_t ip)
+{
+  return (network | acl) ^ (ip | acl) ? 0 : 1;
+}
 
 void
 cls ()
@@ -16,6 +22,40 @@ cls ()
   tgetent (buf, getenv ("TERM"));
   str = tgetstr ("cl", NULL);
   fputs (str, stdout);
+}
+
+void
+readin (int sz, char *s)
+{
+  fgets (s, sz, stdin);
+  if (s[strlen (s) - 1] == '\n')
+    s[strlen (s) - 1] = '\0';
+}
+
+unsigned int
+contains (const char *str, char c)
+{
+  int i = 0, sz = strlen (str);
+  if (sz < 1)
+    return 0;
+  for (i; i < sz; i++)
+    if (str[i] == c)
+      return i ? i : 1;
+
+  return 0;
+}
+
+char *
+toLower (char *s)
+{
+  int i = 0, sz;
+  sz = strlen (s);
+  while (s[i] && i < sz)
+    {
+      s[i] = tolower (s[i]);
+      ++i;
+    }
+  return s;
 }
 
 int
