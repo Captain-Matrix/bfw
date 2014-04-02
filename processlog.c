@@ -196,12 +196,12 @@ summarize (rule * rarg)
 
   rule *rtmp, *rtmp2, *rtmp3;
 //   if (rarg == NULL)
-    rtmp =CIRCLEQ_FIRST (&rule_head);
+  rtmp = CIRCLEQ_FIRST (&rule_head);
 //   else
 //     rtmp = rarg;
-  printf ("Summarizing rules.... %d\n",rtmp->action);
+  printf ("Summarizing rules.... %d\n", rtmp->action);
   avgm = hundred / rcount;
-  for (r_index , f_index; r_index < rcount; f_index++, r_index++)
+  for (r_index, f_index; r_index < rcount; f_index++, r_index++)
     {
 
       rtmp2 = CIRCLEQ_NEXT (rtmp, entries);
@@ -210,19 +210,18 @@ summarize (rule * rarg)
 	{
 
 	  if (rtmp->action ==
-	    rtmp2->action && 
-	    rtmp->L3 == rtmp2->L3 &&
+	      rtmp2->action &&
+	      rtmp->L3 == rtmp2->L3 &&
 	      match (rtmp->src, rtmp->src_mask, rtmp2->src)
 	      && match (rtmp->dest, rtmp->dest_mask, rtmp2->dest)
-	      && rtmp->L4 == rtmp2->L4  
-	      && rtmp->d_port == rtmp2->d_port
-	    //  && rtmp2->s_port== rtmp->s_port
-	     // && rtmp2->s_port_last <= rtmp->s_port_last
+	      && rtmp->L4 == rtmp2->L4 && rtmp->d_port == rtmp2->d_port
+	      //  && rtmp2->s_port== rtmp->s_port
+	      // && rtmp2->s_port_last <= rtmp->s_port_last
 	      && rtmp->direction == rtmp2->direction
 	      && rtmp->hour == rtmp2->hour
 	      && strncmp (rtmp->IF, rtmp2->IF, IFNAMSIZ) == 0)
 	    {
-	      	      
+
 
 	      CIRCLEQ_REMOVE (&rule_head, rtmp2, entries);
 	      rtmp3 = CIRCLEQ_NEXT (rtmp2, entries);
@@ -234,7 +233,7 @@ summarize (rule * rarg)
 
 	      --rcount;
 	      avgm = hundred / rcount;
-			
+
 	    }
 	  else
 	    {
@@ -309,7 +308,7 @@ prompt ()
 	     PROMPT);
 	  readin (256, &buf[0]);
 	  acl_load (buf);
-	  summarize(NULL);
+	  summarize (NULL);
 	  usage ();
 	  break;
 	case 'p':
@@ -453,7 +452,7 @@ acl_load (char *path)
 	line[strlen (line) - 1] = '\0';
       t = strtok (line, s);
       r = malloc (sizeof (rule));
-      
+
       for (i = 0; i < 15 && t != NULL; i++)
 	{
 	  switch (i)
@@ -463,7 +462,7 @@ acl_load (char *path)
 	      break;
 	    case 1:
 	      toLower (t);
-	      if (strncmp ("permit", t,6) == 0)
+	      if (strncmp ("permit", t, 6) == 0)
 		r->action = PERMIT;
 	      else if (strncmp (t, "deny", 4) == 0)
 		r->action = DENY;
@@ -622,7 +621,7 @@ acl_load (char *path)
 	invalid = 0;
     }
   r = CIRCLEQ_FIRST (&rule_head);
-printf("\n");
+  printf ("\n");
 }
 
 int
