@@ -11,6 +11,9 @@
 #define LOG -1
 #define ROWS 40
 #define PROMPT "$(learning)>"
+
+
+
 char days[7][10] =
   { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
   "Saturday"
@@ -37,7 +40,8 @@ struct rule
     CIRCLEQ_ENTRY (rule) entries;
 };
 typedef struct rule rule;
-CIRCLEQ_HEAD (, rule) rule_head;
+CIRCLEQ_HEAD (ncq, rule) rule_head;
+
      void load (char *p);
      void acl_load (char *path);
 #endif

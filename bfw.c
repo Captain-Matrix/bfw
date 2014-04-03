@@ -29,7 +29,8 @@
 #include "bfw.h"
 #include "utils.h"
 
-int debug = 0;
+static int debug = 0, rcount = -1, r_index = 0;
+rule *r;
 static int
 nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	     struct nfq_data *nfa, void *data)

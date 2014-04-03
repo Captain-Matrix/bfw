@@ -11,6 +11,7 @@
 #include <string.h>
 #include "bfw.h"
 #include "utils.h"
+#include "acl.h"
 #include "processlog.h"
 int debug = 0, rcount = -1, r_index = 0;
 rule *r;
@@ -41,7 +42,7 @@ more (int index)
 {
   if (index > rcount)
     {
-      r_index = 0;
+      // r_index = 0;
       index = 0;
       r = CIRCLEQ_FIRST (&rule_head);
     }
@@ -59,7 +60,9 @@ more (int index)
     ("%3s %6s  %s  %15s %17s %15s %15s %3s %5s %5s %4s %8s %4s %5s  %7s\n",
      "#", "ACTION", "L3", "SOURCE", "ACL MASK", "DEST", "ACL MASK", "L4",
      "SRC", "DEST", "BW", "DOW", "TIME", "IF", "DIRECTON");
-  for (r_index; r_index < rcount && r_index < rows; r_index++)
+  for (r = rule_head.cqh_first, r_index = 0;
+       r_index < rows && r != (void *) &rule_head;
+       r = r->entries.cqe_next, r_index++)
     {
       switch (r->L3)
 	{
@@ -108,7 +111,7 @@ more (int index)
 	 int_to_ip (r->src_mask), int_to_ip (r->dest),
 	 int_to_ip (r->dest_mask), l4, r->s_port, r->d_port, 0,
 	 Dow, hour, minute, r->IF, r->direction ? "INGRESS" : "EGRESS");
-      r = CIRCLEQ_NEXT (r, entries);
+      //r = CIRCLEQ_NEXT (r, entries);
 
     }
   if (r_index >= rcount)
@@ -255,17 +258,14 @@ summarize (rule * rarg)
 void
 empty ()
 {
-//   rule *r1, *r2;
-//   r1 = CIRCLEQ_FIRST (&rule_head);
-//   while (!CIRCLEQ_EMPTY (&rule_head))
-//     {
-//       r2 = CIRCLEQ_NEXT (r1, entries);
-//       CIRCLEQ_REMOVE (&rule_head, r1, entries);
-//       free (r1);
-//       r1 = r2;
-//       --rcount;
-//     }
-//   printf ("Emptied rule FIFO[%d]\n", rcount);
+  rule *r1, *r2;
+  //r = CIRCLEQ_FIRST (&rule_head);
+  while (rcount > 0 && rule_head.cqh_first != (void *) &rule_head)
+    {
+      CIRCLEQ_REMOVE (&rule_head, rule_head.cqh_first, entries);
+      --rcount;
+    }
+  printf ("Emptied rule FIFO[%d]\n", rcount);
 
 }
 
@@ -332,7 +332,7 @@ void
 load (char *path)
 {
   meta_data M;
-  if (!CIRCLEQ_EMPTY (&rule_head))
+  if (rcount > 0 && !CIRCLEQ_EMPTY (&rule_head))
     empty ();
 
   CIRCLEQ_INIT (&rule_head);
