@@ -28,9 +28,10 @@
 #include <linux/udp.h>
 #include "bfw.h"
 #include "utils.h"
-
-static int debug = 0, rcount = -1, r_index = 0;
-rule *r;
+//#include "processlog.h"
+// static int debug = 0, rcount = -1, r_index = 0;
+// rule *r;
+int debug=0;
 static int
 nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	     struct nfq_data *nfa, void *data)
@@ -44,7 +45,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
   memset (&M, 0, sizeof (meta_data));
   ph = nfq_get_msg_packet_hdr (nfa);
   id = ntohl (ph->packet_id);
-
+//    rule *new;
   if (ph)
     {
       if (debug)
@@ -145,7 +146,10 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	fwrite (M.tcp_header, sizeof (struct tcphdr), 1, learn_log);
       else if (ntohs (M.layer4) == UDP)
 	fwrite (M.udp_header, sizeof (struct udphdr), 1, learn_log);
+      /////////////////////////////////////////////////////////////////
 
+
+      /////////////////////////////////////////////////////////////////
     }
   nfq_set_verdict (qh, id, NF_ACCEPT, size, raw_packet);
 }
@@ -157,6 +161,8 @@ start_fw ()
   int fd, rv;
   char buf[4096];
 
+// acl_load ("./rules");
+// summarize(NULL);
   if (!(learn_log = fopen ("./bfw_learn.log", "ab+")))
     {
       fprintf (stderr, "Error opening learning log file\n");

@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS=  -p -g -lnetfilter_queue -lnfnetlink -lpthread -ltinfo
 LDFLAGS=
-SOURCES=./bfw.c ./utils.c
+SOURCES=./bfw.c ./utils.c 
 SOURCES2=./processlog.c ./utils.c
 EXECUTABLE=bfw
 EXECUTABLE2=processlog

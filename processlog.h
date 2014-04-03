@@ -14,7 +14,7 @@
 
 
 
-char days[7][10] =
+static char days[7][10] =
   { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
   "Saturday"
 };
@@ -44,4 +44,6 @@ CIRCLEQ_HEAD (ncq, rule) rule_head;
 
      void load (char *p);
      void acl_load (char *path);
+     void
+summarize (rule * rarg);
 #endif

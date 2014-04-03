@@ -11,7 +11,6 @@
 #include <string.h>
 #include "bfw.h"
 #include "utils.h"
-#include "acl.h"
 #include "processlog.h"
 int debug = 0, rcount = -1, r_index = 0;
 rule *r;
