@@ -531,11 +531,11 @@ acl_load (char *path)
 		}
 	      else if (contains (t, '-'))
 		{
-		  sscanf (t, "%d-%d", &r->s_port, &r->s_port_last);
+		  sscanf (t, "%hu-%hu", &r->s_port, &r->s_port_last);
 		}
 	      else
 		{
-		  sscanf (t, "%d", &r->s_port);
+		  sscanf (t, "%hu", &r->s_port);
 		  r->s_port_last = r->s_port;
 		}
 	      break;
@@ -548,11 +548,11 @@ acl_load (char *path)
 		}
 	      else if (contains (t, '-'))
 		{
-		  sscanf (t, "%d-%d", &r->d_port, &r->d_port_last);
+		  sscanf (t, "%hu-%hu", &r->d_port, &r->d_port_last);
 		}
 	      else
 		{
-		  sscanf (t, "%d", &r->d_port);
+		  sscanf (t, "%hu", &r->d_port);
 		  r->d_port_last = r->d_port;
 		}
 	      break;
