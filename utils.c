@@ -13,6 +13,24 @@ match (uint32_t network, uint32_t acl, uint32_t ip)
   return (network | acl) ^ (ip | acl) ? 0 : 1;
 }
 
+int
+p_match (uint16_t port_num, uint16_t to_port_min, uint16_t to_port_max)
+{				//second argument has to be from the fw rule
+  if (to_port_min < 1 && to_port_max < 1)
+    return 1;
+  if (to_port_min < 1 && to_port_max > 1)
+    if (port_num <= to_port_max)
+      return 1;
+    else if (to_port_min > 1 && to_port_max < 1)
+      if (port_num >= to_port_min)
+	return 1;
+      else if (to_port_min > 1 && to_port_max > 1)
+	if (port_num >= to_port_min && port_num <= to_port_max)
+	  return 1;
+
+  return 0;
+}
+
 void
 cls ()
 {
@@ -88,7 +106,8 @@ int_to_ip (int ip)
 void
 iptables_on ()
 {
-  if (system (IPT_IN_ON) < 0 || system (IPT_OUT_ON) < 0)
+  if (system (IPT_IN_ON) < 0 || system (IPT_OUT_ON) < 0
+      || system (IPT_IN_RAW_ON) < 0 || system (IPT_OUT_RAW_ON) < 0)
     {
       perror ("Error adding iptables rule to redirect taffic to bfw: ");
       exit (1);
@@ -100,7 +119,8 @@ iptables_on ()
 void
 iptables_off ()
 {
-  if (system (IPT_IN_OFF) < 0 || system (IPT_OUT_OFF) < 0)
+  if (system (IPT_IN_OFF) < 0 || system (IPT_OUT_OFF) < 0
+      || system (IPT_IN_RAW_OFF) < 0 || system (IPT_OUT_RAW_OFF) < 0)
     {
       perror
 	("Error removing iptables rules to resume normal traffic flow: ");

@@ -28,16 +28,15 @@
 #include <linux/udp.h>
 #include "bfw.h"
 #include "utils.h"
-//#include "processlog.h"
-// static int debug = 0, rcount = -1, r_index = 0;
-// rule *r;
-int debug=0;
+#include "processlog.h"
+static int debug = 0, rcount = -1, r_index = 0, mode = ENFORCING;
+static rule *r;
 static int
 nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	     struct nfq_data *nfa, void *data)
 {
-  int i, j = 0, id = 0, ifin, ifout, size =
-    nfq_get_payload (nfa, &raw_packet);
+  int verdict = DENY, i, j = 0, id = 0, ifin = -1, ifout = -1, ifpin =
+    -1, ifpout = -1, size = nfq_get_payload (nfa, &raw_packet);
   uint16_t sport, dport;
   char *upperlayers;
   struct nfqnl_msg_packet_hdr *ph;
@@ -45,7 +44,6 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
   memset (&M, 0, sizeof (meta_data));
   ph = nfq_get_msg_packet_hdr (nfa);
   id = ntohl (ph->packet_id);
-//    rule *new;
   if (ph)
     {
       if (debug)
@@ -54,8 +52,11 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
       fflush (stdout);
       M.size = size;
       M.stamp = time (NULL);
+      // printf("%d %d %d %d\n" ,nfq_get_physindev(nfa),nfq_get_physoutdev(nfa),nfq_get_indev(nfa),nfq_get_outdev(nfa));
       ifout = nfq_get_outdev (nfa);
       ifin = nfq_get_indev (nfa);
+      ifpin = nfq_get_physindev (nfa);
+      ifpout = nfq_get_physoutdev (nfa);
       M.ip_header = (struct iphdr *) raw_packet;
       M.layer4 = M.ip_header->protocol;
       if (ntohs (M.layer4) == TCP)
@@ -78,80 +79,134 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	{
 	  upperlayers = (char *) raw_packet;
 	}
-
-      if (ifout > 0)
-	{			//egress
-	  M.direction = EGRESS;
-	  if (nfq_get_outdev_name (nlfh, nfa, (char *) &M.interface) == -1)
-	    {
-	      perror ("Error fetching egress interface name: ");
-	    }
-	  else
-	    {
-	      if (debug)
-		{
-		  printf
-		    ("\t\t%s \t\tEGRESS: %s\tL4:%0x\n%s:%d ---> %s:%d\n\n",
-		     ctime (&M.stamp), M.interface, ntohs (M.layer4),
-		     int_to_ip (ntohl (M.ip_header->saddr)), sport,
-		     int_to_ip (ntohl (M.ip_header->daddr)), dport);
-		  fflush (stdout);
-		}
-	    }
-
-
-	}
-      else if (ifin > 0)
-	{			//ingress
+      if (ph->hook == NF_INET_PRE_ROUTING)
+	{
 	  M.direction = INGRESS;
-	  if (nfq_get_indev_name (nlfh, nfa, (char *) &M.interface) == -1)
+	  if (ifpin)
 	    {
-	      perror ("Error fetching ingress interface name: ");
+	      if (nfq_get_physindev_name (nlfh, nfa, (char *) &M.interface) ==
+		  -1)
+		perror ("Error fetching egress interface name: ");
 	    }
 	  else
 	    {
-	      if (debug)
+	      if (nfq_get_indev_name (nlfh, nfa, (char *) &M.interface) == -1)
+		perror ("Error fetching egress interface name: ");
+
+	    }
+
+	}
+      else if (ph->hook == NF_INET_POST_ROUTING)
+	{
+	  M.direction = EGRESS;
+	  if (ifpout)
+	    {
+	      if (nfq_get_physoutdev_name (nlfh, nfa, (char *) &M.interface)
+		  == -1)
+		perror ("Error fetching egress interface name: ");
+	    }
+	  else
+	    {
+	      if (nfq_get_outdev_name (nlfh, nfa, (char *) &M.interface) ==
+		  -1)
+		perror ("Error fetching egress interface name: ");
+
+	    }
+	}
+
+      if (debug)
+	{
+	  for (i = 0, j = 0; i < M.size; i++, j++)
+	    {
+	      if (isprint (raw_packet[i]))
+		printf ("%c", raw_packet[i]);
+	      else
+		printf (".");
+	      if (j == 80)
 		{
-		  printf
-		    ("\t\t%s \t\tINGRESS: %s\tL4:%0x\n%s:%d ---> %s:%d\n\n",
-		     ctime (&M.stamp), M.interface, ntohs (M.layer4),
-		     int_to_ip (ntohl (M.ip_header->saddr)), sport,
-		     int_to_ip (ntohl (M.ip_header->daddr)), dport);
-		  fflush (stdout);
+		  j = 0;
+		  printf ("\n");
 		}
 	    }
 	}
-//       if (debug)
-//      {
-//        for (i = 0, j = 0; i < M.size; i++, j++)
-//          {
-//            if (isprint (raw_packet[i]))
-//              printf ("%c", raw_packet[i]);
-//            else
-//              printf (".");
-//            if (j == 80)
-//              {
-//                j = 0;
-//                printf ("\n");
-//              }
-//          }
-//      }
-      fwrite (&M.size, sizeof (M.size), 1, learn_log);
-      fwrite (&M.direction, sizeof (M.direction), 1, learn_log);
-      fwrite (&M.layer4, sizeof (M.layer4), 1, learn_log);
-      fwrite (&M.stamp, sizeof (time_t), 1, learn_log);
-      fwrite (&M.interface, sizeof (char), IFNAMSIZ, learn_log);
-      fwrite (M.ip_header, sizeof (struct iphdr), 1, learn_log);
-      if (ntohs (M.layer4) == TCP)
-	fwrite (M.tcp_header, sizeof (struct tcphdr), 1, learn_log);
-      else if (ntohs (M.layer4) == UDP)
-	fwrite (M.udp_header, sizeof (struct udphdr), 1, learn_log);
-      /////////////////////////////////////////////////////////////////
 
+      ///////////////////meta_data parsed this is where the fw will make decisions on traffic///////////////////////////////
+//        if(M.direction==INGRESS)printf("IN %s\n",M.interface);
+//        if(M.direction==EGRESS)printf("OUT %s\n",M.interface);
+//     //  printf("%s\n",M.interface);
+      if (mode == LEARNING)
+	fw_log (M);
+      else if (mode == ENFORCING)
+	{
+	  verdict = check_rules (M);
+	}
 
-      /////////////////////////////////////////////////////////////////
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
-  nfq_set_verdict (qh, id, NF_ACCEPT, size, raw_packet);
+  switch (verdict)
+    {
+    case PERMIT:
+      nfq_set_verdict (qh, id, NF_ACCEPT, size, raw_packet);
+      break;
+    case DENY:
+      nfq_set_verdict (qh, id, NF_DROP, size, raw_packet);
+      break;
+    case LOG:
+      fw_log (M);
+      nfq_set_verdict (qh, id, NF_ACCEPT, size, raw_packet);
+      break;
+    default:
+      nfq_set_verdict (qh, id, NF_DROP, size, raw_packet);
+      break;
+    }
+  return 0;
+}
+
+int
+check_rules (meta_data M)
+{
+  uint32_t s_ip = ntohl (M.ip_header->saddr), d_ip =
+    ntohl (M.ip_header->daddr);
+  uint16_t s_port = 0, d_port = 0;
+  if (M.layer4 == TCP)
+    s_port = ntohs (M.tcp_header->source), d_port =
+      ntohs (M.tcp_header->dest);
+  else if (M.layer4 == UDP)
+    s_port = ntohs (M.udp_header->source), d_port =
+      ntohs (M.udp_header->dest);
+
+  for (r = rule_head.cqh_first, r_index = 0;
+       r != (void *) &rule_head; r = r->entries.cqe_next, r_index++)
+    {
+      // printf("%s %s --> %s %s / %s ? %s\n",int_to_ip(r->src),int_to_ip(r->src_mask),int_to_ip(r->dest),int_to_ip(r->dest_mask),int_to_ip(d_ip));
+      if (match (r->src, r->src_mask, s_ip)
+	  && match (r->dest, r->dest_mask, d_ip))
+	{
+	  if (p_match (s_port, r->s_port, r->s_port_last)
+	      && p_match (d_port, r->d_port, r->d_port_last))
+	    {
+	      return r->action;	// in soviet russia you don't block programs ,programs block you!
+	    }
+	}
+
+    }
+  return DENY;			//default deny policy when enforcing rules
+}
+
+void
+fw_log (meta_data M)
+{				//binary logs,converting to text during packet processing would be too costly
+  fwrite (&M.size, sizeof (M.size), 1, learn_log);
+  fwrite (&M.direction, sizeof (M.direction), 1, learn_log);
+  fwrite (&M.layer4, sizeof (M.layer4), 1, learn_log);
+  fwrite (&M.stamp, sizeof (time_t), 1, learn_log);
+  fwrite (&M.interface, sizeof (char), IFNAMSIZ, learn_log);
+  fwrite (M.ip_header, sizeof (struct iphdr), 1, learn_log);
+  if (ntohs (M.layer4) == TCP)
+    fwrite (M.tcp_header, sizeof (struct tcphdr), 1, learn_log);
+  else if (ntohs (M.layer4) == UDP)
+    fwrite (M.udp_header, sizeof (struct udphdr), 1, learn_log);
+
 }
 
 int
@@ -161,8 +216,8 @@ start_fw ()
   int fd, rv;
   char buf[4096];
 
-// acl_load ("./rules");
-// summarize(NULL);
+  acl_load ("./test_rules");
+  summarize (NULL);
   if (!(learn_log = fopen ("./bfw_learn.log", "ab+")))
     {
       fprintf (stderr, "Error opening learning log file\n");

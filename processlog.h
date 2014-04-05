@@ -22,6 +22,7 @@ static char days[7][10] =
 struct rule
 {
   int number;
+  int hits;
   int action;
   int L3;
   uint32_t src;
@@ -44,6 +45,5 @@ CIRCLEQ_HEAD (ncq, rule) rule_head;
 
      void load (char *p);
      void acl_load (char *path);
-     void
-summarize (rule * rarg);
+     void summarize (rule * rarg);
 #endif

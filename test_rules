@@ -1,0 +1,4 @@
+0 DENY  IPv4      172.16.10.3         0.0.0.0  74.125.227.0         0.0.0.255  TCP 47042    80    0   Sunday  0:16  ens3   EGRESS
+1 LOG  IPv4      4.2.2.2         0.0.0.0  74.125.227.0         255.255.255.255  TCP 47042    80    0   Sunday  0:16  ens3   EGRESS
+2 PERMIT  IPv4      172.16.10.3         255.255.255.255  68.142.250.142         255.255.255.255  TCP any    any    0   Sunday  0:16  ens3   EGRESS
+

@@ -524,7 +524,7 @@ acl_load (char *path)
 	      break;
 	    case 8:		//src port
 	      toLower (t);
-	      if (strncmp ("*", t, 1) == 0)
+	      if (strncmp ("any", t, 3) == 0)
 		{
 		  r->s_port = 0;
 		  r->s_port_last = r->s_port;
@@ -623,19 +623,19 @@ acl_load (char *path)
   printf ("\n");
 }
 
-int
-main (int argc, char **argv)
-{
-  if (argc < 2)
-    {
-      prompt ();
-    }
-  else
-    {
-      load (argv[1]);
-      summarize (NULL);
-      printf ("Loaded %d rules from %s\n", rcount, argv[1]);
-      prompt ();
-    }
-  return 0;
-}
+// int
+// main (int argc, char **argv)
+// {
+//   if (argc < 2)
+//     {
+//       prompt ();
+//     }
+//   else
+//     {
+//       load (argv[1]);
+//       summarize (NULL);
+//       printf ("Loaded %d rules from %s\n", rcount, argv[1]);
+//       prompt ();
+//     }
+//   return 0;
+// }
