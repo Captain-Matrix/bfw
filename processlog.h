@@ -46,4 +46,5 @@ CIRCLEQ_HEAD (ncq, rule) rule_head;
      void load (char *p);
      void acl_load (char *path);
      void summarize (rule * rarg);
+     void web_table (int sz, char *tbl);
 #endif

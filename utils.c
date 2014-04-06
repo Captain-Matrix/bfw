@@ -14,21 +14,19 @@ match (uint32_t network, uint32_t acl, uint32_t ip)
 }
 
 int
-p_match (uint16_t port_num, uint16_t to_port_min, uint16_t to_port_max)
+p_match (uint16_t port, uint16_t min, uint16_t max)
 {				//second argument has to be from the fw rule
-  if (to_port_min < 1 && to_port_max < 1)
-    return 1;
-  if (to_port_min < 1 && to_port_max > 1)
-    if (port_num <= to_port_max)
-      return 1;
-    else if (to_port_min > 1 && to_port_max < 1)
-      if (port_num >= to_port_min)
-	return 1;
-      else if (to_port_min > 1 && to_port_max > 1)
-	if (port_num >= to_port_min && port_num <= to_port_max)
-	  return 1;
+  if ((min + max) == 0)
+    return 1;			//any src/dest
+  if (min == max)
+    if (port == min)
+      return 1;			//no port range
+  if (port >= min && port <= max)
+    return 1;			//both non-zero range value
 
-  return 0;
+//printf("%hu ? %hu -> %hu\n",port,min,max);
+
+  return 0;			//no match :(
 }
 
 void
