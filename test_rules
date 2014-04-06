@@ -1,4 +1,19 @@
 0 DENY  IPv4      172.16.10.3         0.0.0.0  74.125.227.0         0.0.0.255  TCP 47042    80    0   Sunday  0:16  ens3   EGRESS
 1 LOG  IPv4      4.2.2.2         0.0.0.0  74.125.227.0         255.255.255.255  TCP 47042    80    0   Sunday  0:16  ens3   EGRESS
-2 PERMIT  IPv4      172.16.10.3         255.255.255.255  68.142.250.142         255.255.255.255  TCP any    any    0   Sunday  0:16  ens3   EGRESS
+2 PERMIT  IPv4    1.2.3.4  255.255.255.255   127.0.0.1    0.255.255.255   TCP 9999  any 0 any 0:10 ens3 INGRESS
+3 PERMIT  IPv4    127.0.0.1 0.255.255.255   0.0.0.0 255.255.255.255 TCP any  9999 0 any 0:10 ens3 INGRESS
+2 PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 9999  any 0 any 0:10 ens3 INGRESS
+3 PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  9999 0 any 0:10 ens3 INGRESS
+2 PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 80  any 0 any 0:10 ens3 INGRESS
+3 PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  80 0 any 0:10 ens3 INGRESS
+4 PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 6667-7000  any 0 any 0:10 ens3 INGRESS
+5 PERMIT  IPv4     172.16.10.3     0.0.0.255     1.2.3.4    255.255.255.255 TCP  any  any  0 any 0:0 ens3 EGRESS
+5 PERMIT  IPv4     0.0.0.0     255.255.255.255     172.16.10.0    0.0.0.255 TCP  any  any  0 any 0:0 ens3 EGRESS
+5 PERMIT  IPv4     192.168.2.0     0.0.0.255     1.2.3.4    255.255.255.255 TCP  any  any  0 any 0:0 ens3 EGRESS
+5 PERMIT  IPv4     0.0.0.0     255.255.255.255     192.168.2.0    0.0.0.255 TCP  any  any  0 any 0:0 ens3 EGRESS
+5 PERMIT  IPv4     172.16.10.3     0.0.0.255     1.2.3.4    255.255.255.255 TCP  any  6667-7000  0 any 0:0 ens3 EGRESS
+6  PERMIT  IPv4      172.16.10.3         255.255.255.255  68.142.250.142         255.255.255.255  TCP any    any    0   Sunday  0:16  ens3   EGRESS
+7  DENY  IPv4      172.16.10.3         255.255.255.255  68.142.250.142         255.255.255.255  TCP any    any    0   Sunday  0:16  ens3   EGRESS
+8  PERMIT  IPv4      172.16.10.3         255.255.255.255  68.142.250.142         255.255.255.255  TCP any    any    0   Sunday  0:16  ens3   EGRESS
+
 
