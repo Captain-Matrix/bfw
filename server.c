@@ -35,13 +35,14 @@ web_table (int sz, char *buf)
   char time[10], action[10], direction[10];
   int i;
   struct tm *T;
-  i += snprintf (buf, sz, "<html><body><table border=\"1\">");
-  i += snprintf (buf + strlen (buf), sz - i,
-		 "<tr><td contenteditable=\"true\">%4s</td> <td contenteditable=\"true\">%3s</td> <td contenteditable=\"true\">%6s</td>  <td contenteditable=\"true\">%s</td>  <td contenteditable=\"true\">%15s</td> <td contenteditable=\"true\">%17s</td> <td contenteditable=\"true\">%15s</td> <td contenteditable=\"true\">%15s</td> <td contenteditable=\"true\">%3s</td> <td contenteditable=\"true\">%5s</td> <td contenteditable=\"true\">%5s</td> <td contenteditable=\"true\">%4s</td> <td contenteditable=\"true\">%8s</td> <td contenteditable=\"true\">%4s</td> <td contenteditable=\"true\">%5s</td>  <td contenteditable=\"true\">%7s</td></tr>\n<br/>",
-		 "#", "Hits", "ACTION", "L3", "SOURCE", "ACL MASK",
-		 "DEST", "ACL MASK", "L4", "SRC", "DEST", "BW", "DOW",
-		 "TIME", "IF", "DIRECTON");
-  for (r = rule_head.cqh_first, r_index = 0; r != (void *) &rule_head;
+//   i += snprintf (buf, sz, "<html><body><table style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\">");
+//   i += snprintf (buf + strlen (buf), sz - i,
+//               "<tr>#%4s #%3s #%6s  #%s  #%15s #%17s #%15s #%15s #%3s #%5s #%5s #%4s #%8s #%2s#%2s  #%5s  #%7s</tr>\n<br/>",
+//               "#", "Hits", "ACTION", "L3", "SOURCE", "ACL MASK",
+//               "DEST", "ACL MASK", "L4", "SRC", "DEST", "BW", "DOW",
+//               "hour","minute", "IF", "DIRECTON");
+  for (r = rule_head.cqh_first, r_index = 0;
+       r->entries.cqe_next != (void *) &rule_head;
        r = r->entries.cqe_next, r_index++)
     {
 
@@ -106,23 +107,23 @@ web_table (int sz, char *buf)
 
       i += snprintf
 	(buf + strlen (buf), sz - i,
-	 " <tr><td contenteditable=\"true\">%3d</td> <td contenteditable=\"true\">%4d</td>   "
-	 " <td contenteditable=\"true\">%6s</td>  <td contenteditable=\"true\">%s</td>  <td contenteditable=\"true\">%15s</td> <td contenteditable=\"true\">%15s</td> <td contenteditable=\"true\">%15s</td>"
-	 " <td contenteditable=\"true\">%15s</td> <td contenteditable=\"true\">%3s</td>  <td contenteditable=\"true\">%4d</td> <td contenteditable=\"true\">%5d</td> "
-	 "<td contenteditable=\"true\">%4d KB</td> <td contenteditable=\"true\">%8s</td> <td contenteditable=\"true\">%2s</td><td contenteditable=\"true\">%2s</td> "
-	 "<td contenteditable=\"true\">%5s</td>  <td contenteditable=\"true\">%7s</td></tr>",
-	 r->number, r->hits, action, l3, int_to_ip (r->src),
-	 int_to_ip (r->src_mask), int_to_ip (r->dest),
-	 int_to_ip (r->dest_mask), l4, r->s_port, r->d_port, (r->bw / 1024),
-	 Dow, hour, minute, r->IF, direction);
+	 "#%d#%d"
+	 "#%s#%s#%s#%s#%s"
+	 "#%s#%s#%d#%d "
+	 "#%d KB#%s#%s#%s"
+	 "#%s#%s!",
+	 r->number, r->hits, trim (action), trim (l3),
+	 trim (int_to_ip (r->src)), trim (int_to_ip (r->src_mask)),
+	 trim (int_to_ip (r->dest)), trim (int_to_ip (r->dest_mask)),
+	 trim (l4), r->s_port, r->d_port, (r->bw / 1024), trim (Dow),
+	 trim (hour), trim (minute), trim (r->IF), trim (direction));
       //r = CIRCLEQ_NEXT (r, entries);
 
 
     }
-  i +=
-    snprintf (buf + strlen (buf), sz - i,
-	      "</table></body></html> \0\r\n\r\n");
-
+  trim (buf);
+  buf[strlen (buf) - 1] = '\0';
+// printf("%s\n",buf);
 }
 
 static int
@@ -130,19 +131,22 @@ request_handler (struct mg_connection *conn, enum mg_event ev)
 {
   int result = MG_FALSE;
   char buf[100000];
+
+  memset (&buf, 0, 100000);
+
   if (ev == MG_REQUEST)
     {
       if (strncmp (conn->uri, "/", strlen (conn->uri)) == 0)
 	{
 	  fserve (conn, "./index.html");
 	}
-      else if (strncmp ("/table", conn->uri, 6) == 0)
+      else if (strncmp ("/rules", conn->uri, 6) == 0)
 	{
-	  web_table (100000, &buf);
+	  web_table (100000, &buf[0]);
 
 	  mg_send_data (conn, buf, strlen (buf));
 	  mg_printf_data (conn, "\r\n\r\n");
-	  printf ("~~~~~%s~~~~~~~\n", buf);
+	  //printf ("~~~~~%s~~~~~~~\n", buf);
 	  return MG_TRUE;
 	}
       result = MG_TRUE;

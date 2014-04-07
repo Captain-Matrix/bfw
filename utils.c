@@ -7,6 +7,8 @@
 #include "utils.h"
 #include "bfw.h"
 #include <termcap.h>
+static const char *safe =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890/.";
 inline uint32_t
 match (uint32_t network, uint32_t acl, uint32_t ip)
 {
@@ -125,5 +127,57 @@ iptables_off ()
       printf
 	("Please manually flush iptables by running /usr/sbin/iptables -F\n");
       exit (1);
+    }
+}
+
+char *
+trim (char *s)
+{
+  char *string = s;
+  int sz = strlen (string);
+  int i = 0;
+
+  for (i; i < sz; i++)
+    if (s[i] == ' ')
+      s = s + (i + 1);		//get rid of leading white space
+
+  sz = strlen (s);
+  while ((s[sz - 1] == ' ') || (s[sz - 1] == '\n'))
+    {
+      string[sz - 1] = '\0';	//get rid of trailing white space
+      --sz;
+    }
+
+  return s;
+}
+
+void
+sanitize (char *s)
+{
+  int sz = strlen (s), sz_al = strlen (safe), i = 0, j = 0, ok = 0;
+  if (sz < 1)
+    return;
+  for (i = 0; i < sz; i++)
+    {
+      if (s[i] == '.' && s[i + 1] == '.')
+	{
+	  s[i] = '\0';
+
+	  return;
+
+	}
+      for (j = 0; j < sz_al; j++)
+	{
+	  if (s[i] == safe[j])
+	    {
+
+	      ok = 1;
+	      break;
+	    }
+
+	}
+      if (!ok)
+	s[i] = '\0';
+      ok = 0;
     }
 }

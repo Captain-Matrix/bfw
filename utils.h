@@ -10,6 +10,7 @@ void readin (int sz, char *s);
 unsigned int contains (const char *str, char c);
 char *toLower (char *s);
 uint32_t match (uint32_t network, uint32_t acl, uint32_t ip);
-
+char *trim (char *s);
+void sanitize (char *s);
 
 #endif
