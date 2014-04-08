@@ -1,21 +1,89 @@
-<html>
+<!DOCTYPE html>
 <meta charset="utf-8">
 
+<link href="http://192.168.2.253/nvdx/nv.d3.css" rel="stylesheet" type="text/css">
+
+<style>
+
+body {
+  overflow-y:scroll;
+}
+
+text {
+  font: 12px sans-serif;
+}
+
+svg {
+  display: block;
+}
+
+#chart1 svg {
+  height: 500px;
+  min-width: 100px;
+  min-height: 100px;
+/*
+  margin: 50px;
+  Minimum height and width is a good idea to prevent negative SVG dimensions...
+  For example width should be =< margin.left + margin.right + 1,
+  of course 1 pixel for the entire chart would not be very useful, BUT should not have errors
+*/
+}
+
+</style>
 <head>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js">
 </script>
+<script src="http://192.168.2.253/nvdx/d3.js"></script>
 
-<link href="http://hack.thissystem.net/nvd4/nv.d3.css" rel="stylesheet" type="text/css">
-<script src="http://hack.thissystem.net/nvd4/d3.js"></script>
-<script src="http://hack.thissystem.net/nvd4/nv.d3.js"></script>
-<script src="http://hack.thissystem.net/nvd4/src/tooltip.js"></script>
-<script src="http://hack.thissystem.net/nvd4/src/utils.js"></script>
-<script src="http://hack.thissystem.net/nvd4/src/models/legend.js"></script>
-<script src="http://hack.thissystem.net/nvd4/src/models/axis.js"></script>
-<script src="http://hack.thissystem.net/nvd4/src/models/scatter.js"></script>
-<script src="http://hack.thissystem.net/nvd4/src/models/line.js"></script>
-<script src="http://hack.thissystem.net/nvd4/src/models/lineWithFocusChart.js"></script>
-<script src="http://hack.thissystem.net/nvd4/stream_layers.js"></script>
+<script src="http://192.168.2.253/nvdx/nv.d3.js"></script>
+<script src="http://192.168.2.253/nvdx/src/tooltip.js"></script>
+<script src="http://192.168.2.253/nvdx/src/utils.js"></script>
+<script src="http://192.168.2.253/nvdx/src/models/legend.js"></script>
+<script src="http://192.168.2.253/nvdx/src/models/axis.js"></script>
+<script src="http://192.168.2.253/nvdx/src/models/scatter.js"></script>
+<script src="http://192.168.2.253/nvdx/src/models/line.js"></script>
+<script src="http://192.168.2.253/nvdx/src/models/lineWithFocusChart.js"></script>
+<script src="http://192.168.2.253/nvdx/stream_layers.js"></script>
+
+
+
+<script>
+function populate(){
+  
+ $.ajax({url:"rules",success:function(result){
+      var rows=result.split("!");
+      var cells;
+      var intbl="";
+      intbl="<tbody><tr><td   style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   #</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">Hits</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">ACTION</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">L3</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         SOURCE</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">           DEST</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">       ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> L4</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  SRC</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> DEST</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  BW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">     DOW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">hour</td><td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">minute</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   IF</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">DIRECTON</td></tr>";
+      var tmp;
+      for (var i=0;i<rows.length;i++){
+	cells=rows[i].split("#");
+	intbl+="<tr id=\""+i+"\">";
+	
+	for(var j=1;j<cells.length;j++){
+	  intbl+="<td contenteditable=\"true\" style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\"id=\""+i+j+"\">"+cells[j]+"</td>";
+	  
+	}
+	
+	intbl+="</tr>";
+      }
+      intbl+="</tbody>";
+      
+            $("#tbl").empty();
+
+      	$("#tbl").append(intbl);
+    }, cache: false});
+  
+}
+function timer(){
+ populate();
+setTimeout('timer()',5000); 
+}
+$(document).ready(timer());
+</script>
+</head>
+<body>
+
 <script>
 
 
@@ -55,69 +123,6 @@ function testData() {
 
 
 </script>
-<style>
-
-body {
-  overflow-y:scroll;
-}
-
-text {
-  font: 12px sans-serif;
-}
-
-svg {
-  display: block;
-}
-
-#chart1 svg {
-  height: 500px;
-  min-width: 100px;
-  min-height: 100px;
-/*
-  margin: 50px;
-  Minimum height and width is a good idea to prevent negative SVG dimensions...
-  For example width should be =< margin.left + margin.right + 1,
-  of course 1 pixel for the entire chart would not be very useful, BUT should not have errors
-*/
-}
-
-</style>
-<script>
-function populate(){
-  
- $.ajax({url:"rules",success:function(result){
-      var rows=result.split("!");
-      var cells;
-      var intbl="";
-      intbl="<tbody><tr><td   style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   #</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">Hits</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">ACTION</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">L3</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         SOURCE</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">           DEST</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">       ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> L4</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  SRC</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> DEST</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  BW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">     DOW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">hour</td><td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">minute</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   IF</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">DIRECTON</td></tr>";
-      var tmp;
-      for (var i=0;i<rows.length;i++){
-	cells=rows[i].split("#");
-	intbl+="<tr id=\""+i+"\">";
-	
-	for(var j=0;j<cells.length;j++){
-	  intbl+="<td contenteditable=\"true\" style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\"id=\""+i+j+"\">"+cells[j]+"</td>";
-	  
-	}
-	
-	intbl+="</tr>";
-      }
-      intbl+="</tbody>";
-      
-            $("#tbl").empty();
-
-      	$("#tbl").append(intbl);
-    }, cache: false});
-  
-}
-function timer(){
- populate();
-setTimeout('timer()',5000); 
-}
-$(document).ready(timer());
-</script>
-</head>
-<body>
 <table style="border-collapse:collapse;border:1px solid green;background-color:black;color:lime;" id="tbl">
 
 <div id="chart" class='with-3d-shadow with-transitions'>
