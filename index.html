@@ -43,28 +43,57 @@ svg {
 <script src="http://hack.thissystem.net/nvdx/src/models/scatter.js"></script>
 <script src="http://hack.thissystem.net/nvdx/src/models/line.js"></script>
 <script src="http://hack.thissystem.net/nvdx/src/models/lineWithFocusChart.js"></script>
-<script src="http://hack.thissystem.net/nvdx/stream_layers.js"></script>
+<!--<script src="http://hack.thissystem.net/nvdx/stream_layers.js"></script>-->
 
 
 
 <script>
+
+</script>
+</head>
+<body>
+
+<script>
+var chart;
+chart = nv.models.lineWithFocusChart();
+
+ var xx=0;
+var yy=0;
+var max;
+var dd=[];
+var ddd=[];
 function populate(){
-  
+ 
+
  $.ajax({url:"rules",success:function(result){
       var rows=result.split("!");
       var cells;
       var intbl="";
       intbl="<tbody><tr><td   style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   #</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">Hits</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">ACTION</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">L3</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         SOURCE</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">           DEST</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">       ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> L4</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  SRC</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> DEST</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  BW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">     DOW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">hour</td><td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">minute</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   IF</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">DIRECTON</td></tr>";
       var tmp;
+      ddd="";
+      ddd=[];
+      if(xx>200){
+	dd="" ;
+	dd=[];
+	xx=0;
+      }
+      var r;
       for (var i=0;i<rows.length;i++){
 	cells=rows[i].split("#");
 	intbl+="<tr id=\""+i+"\">";
 	
 	for(var j=1;j<cells.length;j++){
+	  if(j==2){
+	    ++xx;
+
+    dd.push({x:xx,y:cells[j]});
+	  }
 	  intbl+="<td contenteditable=\"true\" style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\"id=\""+i+j+"\">"+cells[j]+"</td>";
 	  
 	}
-	
+		    ddd.push({key: "Rule"+i,values:dd,color:"rgb("+(i+255)+","+(255-i)+","+(255/i)")"});
+
 	intbl+="</tr>";
       }
       intbl+="</tbody>";
@@ -73,24 +102,27 @@ function populate(){
 
       	$("#tbl").append(intbl);
     }, cache: false});
-  
+ 
+     d3.select('#chart svg').transition();
+
+}
+
+function tick(){
+ ++xx;
+yy=Math.random()*100;
+dd.push({ x: xx, y: yy});
+ddd.push({key: "sup" , values: dd,color: "#00ff00"});
 }
 function timer(){
  populate();
-setTimeout('timer()',5000); 
+ //tick();
+setTimeout('timer()',1000); 
 }
 $(document).ready(timer());
-</script>
-</head>
-<body>
-
-<script>
-
 
 nv.addGraph(function() {
-  var chart = nv.models.lineWithFocusChart();
 
- // chart.transitionDuration(500);
+  chart.transitionDuration(500);
   chart.xAxis
       .tickFormat(d3.format(',f'));
   chart.x2Axis
@@ -102,7 +134,7 @@ nv.addGraph(function() {
       .tickFormat(d3.format(',.2f'));
 
   d3.select('#chart svg')
-      .datum(testData())
+      .datum(ddd)
       .call(chart);
 
   nv.utils.windowResize(chart.update);
@@ -110,10 +142,35 @@ nv.addGraph(function() {
   return chart;
 });
 
+/* Inspired by Lee Byron's test data generator. */
+function stream_layers(n, m, o) {
+  if (arguments.length < 3) o = 0;
+  function bump(a) {
+    var x = 1 / (.1 + Math.random()),
+        y = 2 * Math.random() - .5,
+        z = 10 / (.1 + Math.random());
+    for (var i = 0; i < m; i++) {
+      var w = (i / m - y) * z;
+      a[i] += x * Math.exp(-w * w);
+    }
+  }
+  return d3.range(n).map(function() {
+      var a = [], i;
+      for (i = 0; i < m; i++) a[i] = o + o * Math.random();
+      for (i = 0; i < 5; i++) bump(a);
+      return a.map(stream_index);
+    });
+}
 
+
+
+function stream_index(d, i) {
+  return {x: i, y: Math.max(0, d)};
+}
 
 function testData() {
-  return stream_layers(3,128,.1).map(function(data, i) {
+  return stream_layers(13,128,.1).map(function(data, i) {
+
     return { 
       key: 'Stream' + i,
       values: data
@@ -122,17 +179,27 @@ function testData() {
 }
 function myData() {
     var series1 = [];
+    var series2 = [];
     for(var i =1; i < 100; i ++) {
         series1.push({
             x: i, y: 100 / i
         });
     }
-
+for(var j =400; j < 800; j ++) {
+        series2.push({
+            x: j, y: 100 / j
+        });
+    }
     return [
         {
             key: "Series #1",
             values: series1,
             color: "#0000ff"
+        },
+        {
+            key: "Series #2",
+            values: series2,
+            color: "#ff0000"
         }
     ];
 }
