@@ -87,11 +87,16 @@ function populate(){
 // 	     yy=(yy*(1000/max));
 	    ++xx;
 	if(xx==100){
-	xx=0;
-	 dd=[];
-	}
+	  
+	  for(var k=0;k<50;k++){dd.shift();
+	
+	  dd.shift();
+	      dd.unshift({x:xx,y: yy});
+--xx;
+	  }
+	}else{
     dd.push({x:xx,y: yy});
-
+	}
 	  }
 	  intbl+="<td contenteditable=\"true\" style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\"id=\""+i+j+"\">"+cells[j]+"</td>";
 	  

@@ -107,10 +107,8 @@ void
 iptables_on ()
 {
   if (system (IPT_IN_ON) < 0 || system (IPT_OUT_ON) < 0
-      || system (IPT_IN_RAW_ON) < 0 || system (IPT_OUT_RAW_ON) < 0||
-     system (IPT_IN_FILTER_ON) < 0 || system (IPT_OUT_FILTER_ON) < 0
-    
-  )
+      || system (IPT_IN_RAW_ON) < 0 || system (IPT_OUT_RAW_ON) < 0 ||
+      system (IPT_IN_FILTER_ON) < 0 || system (IPT_OUT_FILTER_ON) < 0)
     {
       perror ("Error adding iptables rule to redirect taffic to bfw: ");
       exit (1);
@@ -124,9 +122,7 @@ iptables_off ()
 {
   if (system (IPT_IN_OFF) < 0 || system (IPT_OUT_OFF) < 0
       || system (IPT_IN_RAW_OFF) < 0 || system (IPT_OUT_RAW_OFF) < 0
-     || system (IPT_IN_FILTER_OFF) < 0 || system (IPT_OUT_FILTER_OFF) < 0
-    
-  )
+      || system (IPT_IN_FILTER_OFF) < 0 || system (IPT_OUT_FILTER_OFF) < 0)
     {
       perror
 	("Error removing iptables rules to resume normal traffic flow: ");

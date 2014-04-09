@@ -115,8 +115,9 @@ web_table (int sz, char *buf)
 	 r->name, r->hits, trim (action), trim (l3),
 	 trim (int_to_ip (r->src)), trim (int_to_ip (r->src_mask)),
 	 trim (int_to_ip (r->dest)), trim (int_to_ip (r->dest_mask)),
-	 trim (l4), r->s_port,r->s_port_last, r->d_port,r->d_port_last, (r->bw / 1024), trim (Dow),
-	 trim (hour), trim (minute), trim (r->IF), trim (direction));
+	 trim (l4), r->s_port, r->s_port_last, r->d_port, r->d_port_last,
+	 (r->bw / 1024), trim (Dow), trim (hour), trim (minute), trim (r->IF),
+	 trim (direction));
       //r = CIRCLEQ_NEXT (r, entries);
 
 

@@ -451,168 +451,171 @@ acl_load (char *path)
 	line[strlen (line) - 1] = '\0';
       t = strtok (line, s);
       r = malloc (sizeof (rule));
-       if(line[0]!='#'){
-      for (i = 0; i < 15 && t != NULL; i++)
+      if (line[0] != '#')
 	{
-	  switch (i)
+	  for (i = 0; i < 15 && t != NULL; i++)
 	    {
-	    case 0:
-	      r->number = rcount;	//yeah,I know-I don't care what number you put it in your rule file,it will process it in the order it reads it.
-	     snprintf(r->name,32,"[%d]%s",rcount,t);
-	     break;
-	    case 1:
-	      toLower (t);
-	      if (strncmp ("permit", t, 6) == 0)
-		r->action = PERMIT;
-	      else if (strncmp (t, "deny", 4) == 0)
-		r->action = DENY;
-	      else if (strncmp (t, "log", 3) == 0)
-		r->action = LOG;
-	      break;
-	    case 2:
-	      toLower (t);
-	      if (strncmp (t, "ipv4", 4) == 0)
-		r->L3 = 4;
-	      break;
-	    case 3:		//source ip
-	      //only ipv4 supported atm
-
-	      if (inet_pton (AF_INET, t, &(r->src)) < 1)
+	      switch (i)
 		{
-		  invalid = 1;
-		  printf ("failed ip conversion [%s]\n", t);
-		  goto endloop;	//temporary solution
-
-		}
-	      r->src = ntohl (r->src);
-	      break;
-	    case 4:		//source ip mask
-	      if (inet_pton (AF_INET, t, (void *) &r->src_mask) < 1)
-		{
-		  invalid = 1;
-		  goto endloop;	//temporary solution
-
-		}
-	      r->src_mask = ntohl (r->src_mask);
-	      break;
-	    case 5:		//destination ip
-	      if (inet_pton (AF_INET, t, (void *) &r->dest) < 1)
-		{
-		  invalid = 1;
-		  goto endloop;	//temporary solution
-
-		}
-	      r->dest = ntohl (r->dest);
-	      break;
-	    case 6:		//destination ip mask
-
-	      if (inet_pton (AF_INET, t, (void *) &r->dest_mask) < 1)
-		{
-		  invalid = 1;
-		  goto endloop;	//temporary solution
-
-		}
-	      r->dest_mask = ntohl (r->dest_mask);
-	      break;
-	    case 7:		//layer 4 type
-	      toLower (t);
-	      if (strncmp ("tcp", t, 3) == 0)
-		r->L4 = TCP;
-	      else if (strncmp ("udp", t, 3) == 0)
-		r->L4 = UDP;
-	      else
-		r->L4 = OTHER;
-	      break;
-	    case 8:		//src port
-	      toLower (t);
-	      if (strncmp ("any", t, 3) == 0)
-		{
-		  r->s_port = 0;
-		  r->s_port_last = r->s_port;
-		}
-	      else if (contains (t, '-'))
-		{
-		  sscanf (t, "%hu-%hu", &r->s_port, &r->s_port_last);
-		}
-	      else
-		{
-		  sscanf (t, "%hu", &r->s_port);
-		  r->s_port_last = r->s_port;
-		}
-	      break;
-	    case 9:		//dest port
-	      toLower (t);
-	      if (strncmp ("any", t, 3) == 0)	//only numeric ports allowed,well known services list TODO
-		{
-		  r->d_port = 0;
-		  r->d_port_last = r->d_port;
-		}
-	      else if (contains (t, '-'))
-		{
-		  sscanf (t, "%hu-%hu", &r->d_port, &r->d_port_last);
-		}
-	      else
-		{
-		  sscanf (t, "%hu", &r->d_port);
-		  r->d_port_last = r->d_port;
-		}
-	      break;
-	    case 10:
-	      r->bw = 0;	//not yet supported bandwidth per rule.
-	      break;
-	    case 11:		//dow/day of week
-	      toLower (t);
-	      if (strncmp ("any", t, 3) == 0)
-		{
-		  r->dow = -1;
+		case 0:
+		  r->number = rcount;	//yeah,I know-I don't care what number you put it in your rule file,it will process it in the order it reads it.
+		  snprintf (r->name, 32, "[%d]%s", rcount, t);
 		  break;
-		}
-	      else
-		{
-		  for (j = 0; j < 7; j++)
+		case 1:
+		  toLower (t);
+		  if (strncmp ("permit", t, 6) == 0)
+		    r->action = PERMIT;
+		  else if (strncmp (t, "deny", 4) == 0)
+		    r->action = DENY;
+		  else if (strncmp (t, "log", 3) == 0)
+		    r->action = LOG;
+		  break;
+		case 2:
+		  toLower (t);
+		  if (strncmp (t, "ipv4", 4) == 0)
+		    r->L3 = 4;
+		  break;
+		case 3:	//source ip
+		  //only ipv4 supported atm
+
+		  if (inet_pton (AF_INET, t, &(r->src)) < 1)
 		    {
-		      if (strncmp (t, days[j], strlen (t)) == 0)
-			r->dow = j;
+		      invalid = 1;
+		      printf ("failed ip conversion [%s]\n", t);
+		      goto endloop;	//temporary solution
+
+		    }
+		  r->src = ntohl (r->src);
+		  break;
+		case 4:	//source ip mask
+		  if (inet_pton (AF_INET, t, (void *) &r->src_mask) < 1)
+		    {
+		      invalid = 1;
+		      goto endloop;	//temporary solution
+
+		    }
+		  r->src_mask = ntohl (r->src_mask);
+		  break;
+		case 5:	//destination ip
+		  if (inet_pton (AF_INET, t, (void *) &r->dest) < 1)
+		    {
+		      invalid = 1;
+		      goto endloop;	//temporary solution
+
+		    }
+		  r->dest = ntohl (r->dest);
+		  break;
+		case 6:	//destination ip mask
+
+		  if (inet_pton (AF_INET, t, (void *) &r->dest_mask) < 1)
+		    {
+		      invalid = 1;
+		      goto endloop;	//temporary solution
+
+		    }
+		  r->dest_mask = ntohl (r->dest_mask);
+		  break;
+		case 7:	//layer 4 type
+		  toLower (t);
+		  if (strncmp ("tcp", t, 3) == 0)
+		    r->L4 = TCP;
+		  else if (strncmp ("udp", t, 3) == 0)
+		    r->L4 = UDP;
+		  else
+		    r->L4 = OTHER;
+		  break;
+		case 8:	//src port
+		  toLower (t);
+		  if (strncmp ("any", t, 3) == 0)
+		    {
+		      r->s_port = 0;
+		      r->s_port_last = r->s_port;
+		    }
+		  else if (contains (t, '-'))
+		    {
+		      sscanf (t, "%hu-%hu", &r->s_port, &r->s_port_last);
+		    }
+		  else
+		    {
+		      sscanf (t, "%hu", &r->s_port);
+		      r->s_port_last = r->s_port;
+		    }
+		  break;
+		case 9:	//dest port
+		  toLower (t);
+		  if (strncmp ("any", t, 3) == 0)	//only numeric ports allowed,well known services list TODO
+		    {
+		      r->d_port = 0;
+		      r->d_port_last = r->d_port;
+		    }
+		  else if (contains (t, '-'))
+		    {
+		      sscanf (t, "%hu-%hu", &r->d_port, &r->d_port_last);
+		    }
+		  else
+		    {
+		      sscanf (t, "%hu", &r->d_port);
+		      r->d_port_last = r->d_port;
+		    }
+		  break;
+		case 10:
+		  r->bw = 0;	//not yet supported bandwidth per rule.
+		  break;
+		case 11:	//dow/day of week
+		  toLower (t);
+		  if (strncmp ("any", t, 3) == 0)
+		    {
+		      r->dow = -1;
 		      break;
 		    }
+		  else
+		    {
+		      for (j = 0; j < 7; j++)
+			{
+			  if (strncmp (t, days[j], strlen (t)) == 0)
+			    r->dow = j;
+			  break;
+			}
+		    }
+		  break;
+		case 12:
+		  j = contains (t, '*');
+		  if (j == 1)
+		    {
+		      r->hour = -1;
+		      r->minute = -1;
+		    }
+		  else if (j > 1)
+		    {
+		      sscanf (t + (j + 1), "%d:", &r->hour);
+		      r->minute = -1;
+		    }
+		  else
+		    sscanf (t, "%d:%d", &r->hour, &r->minute);	//obvious
+		  break;
+		case 13:
+		  toLower (t);
+		  snprintf (r->IF, IFNAMSIZ, "%s", t);
+		  break;
+		case 14:
+		  toLower (t);
+		  if (strncmp ("egress", t, 6) == 0)
+		    r->direction = EGRESS;
+		  else if (strncmp ("ingress", t, 7) == 0)
+		    r->direction = INGRESS;
+		  break;
+		default:
+		  printf ("%d how the f*#$ did this happen??\n\a", i);
+		  break;
 		}
-	      break;
-	    case 12:
-	      j = contains (t, '*');
-	      if (j == 1)
-		{
-		  r->hour = -1;
-		  r->minute = -1;
-		}
-	      else if (j > 1)
-		{
-		  sscanf (t + (j + 1), "%d:", &r->hour);
-		  r->minute = -1;
-		}
-	      else
-		sscanf (t, "%d:%d", &r->hour, &r->minute);	//obvious
-	      break;
-	    case 13:
-	      toLower (t);
-	      snprintf (r->IF, IFNAMSIZ, "%s", t);
-	      break;
-	    case 14:
-	      toLower (t);
-	      if (strncmp ("egress", t, 6) == 0)
-		r->direction = EGRESS;
-	      else if (strncmp ("ingress", t, 7) == 0)
-		r->direction = INGRESS;
-	      break;
-	    default:
-	      printf ("%d how the f*#$ did this happen??\n\a", i);
-	      break;
-	    }
 
-	  t = strtok (NULL, s);
+	      t = strtok (NULL, s);
+	    }
 	}
-    }else{
-     invalid=1;
-    }
+      else
+	{
+	  invalid = 1;
+	}
     endloop:
       if (!invalid)
 	{
@@ -622,10 +625,10 @@ acl_load (char *path)
 	}
       else
 	invalid = 0;
-       }
-    
+    }
+
   r = CIRCLEQ_FIRST (&rule_head);
- // printf ("\n");
+  // printf ("\n");
 }
 
 // int
