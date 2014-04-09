@@ -35,6 +35,21 @@ svg {
 </script>
 <script src="http://hack.thissystem.net/nvdx/d3.js"></script>
 
+
+
+
+<script>
+ var xx=0;
+var yy=0;
+var started=0;
+var max;
+var dd=[];
+var ddd=[];
+
+
+</script>
+</head>
+<body>
 <script src="http://hack.thissystem.net/nvdx/nv.d3.js"></script>
 <script src="http://hack.thissystem.net/nvdx/src/tooltip.js"></script>
 <script src="http://hack.thissystem.net/nvdx/src/utils.js"></script>
@@ -43,84 +58,68 @@ svg {
 <script src="http://hack.thissystem.net/nvdx/src/models/scatter.js"></script>
 <script src="http://hack.thissystem.net/nvdx/src/models/line.js"></script>
 <script src="http://hack.thissystem.net/nvdx/src/models/lineWithFocusChart.js"></script>
+
 <!--<script src="http://hack.thissystem.net/nvdx/stream_layers.js"></script>-->
-
-
-
 <script>
 
-</script>
-</head>
-<body>
+var chart ;
 
-<script>
-var chart;
-chart = nv.models.lineWithFocusChart();
-
- var xx=0;
-var yy=0;
-var max;
-var dd=[];
-var ddd=[];
 function populate(){
- 
+     // ddd=[];
+
 
  $.ajax({url:"rules",success:function(result){
       var rows=result.split("!");
       var cells;
       var intbl="";
-      intbl="<tbody><tr><td   style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   #</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">Hits</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">ACTION</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">L3</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         SOURCE</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">           DEST</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">       ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> L4</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  SRC</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> DEST</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  BW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">     DOW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">hour</td><td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">minute</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   IF</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">DIRECTON</td></tr>";
+      intbl="<tbody><tr><td   style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   #</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">Hits</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">ACTION</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">L3</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         SOURCE</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">           DEST</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">       ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> L4</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">SRC-min</td><td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  SRC-max</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> DEST-min</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  DEST-max</td><td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  BW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">     DOW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">hour</td><td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">minute</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   IF</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">DIRECTON</td></tr>";
       var tmp;
-      ddd="";
       ddd=[];
-      if(xx>200){
-	dd="" ;
-	dd=[];
-	xx=0;
-      }
-      var r;
       for (var i=0;i<rows.length;i++){
 	cells=rows[i].split("#");
 	intbl+="<tr id=\""+i+"\">";
-	
+
 	for(var j=1;j<cells.length;j++){
 	  if(j==2){
-	    ++xx;
+	    		yy=parseInt(cells[j]);
 
-    dd.push({x:xx,y:cells[j]});
+	    if(max<yy)max=yy;
+// 	     yy=(yy*(1000/max));
+	    ++xx;
+	if(xx==100){
+	xx=0;
+	 dd=[];
+	}
+    dd.push({x:xx,y: yy});
+
 	  }
 	  intbl+="<td contenteditable=\"true\" style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\"id=\""+i+j+"\">"+cells[j]+"</td>";
 	  
 	}
-		    ddd.push({key: "Rule"+i,values:dd,color:"rgb("+(i+255)+","+(255-i)+","+(255/i)")"});
+	    		    ddd.push({key: "Rule "+i,values: dd});
+
+  d3.select('#chart svg').transition();
 
 	intbl+="</tr>";
       }
+
       intbl+="</tbody>";
       
             $("#tbl").empty();
 
       	$("#tbl").append(intbl);
     }, cache: false});
- 
-     d3.select('#chart svg').transition();
+    
 
+return ddd;
+  
 }
-
-function tick(){
- ++xx;
-yy=Math.random()*100;
-dd.push({ x: xx, y: yy});
-ddd.push({key: "sup" , values: dd,color: "#00ff00"});
+function startGraph(){
+ nv.addGraph(function() {
+   
+if(started<1) {
+  chart= nv.models.lineWithFocusChart();
 }
-function timer(){
- populate();
- //tick();
-setTimeout('timer()',1000); 
-}
-$(document).ready(timer());
-
-nv.addGraph(function() {
 
   chart.transitionDuration(500);
   chart.xAxis
@@ -132,15 +131,44 @@ nv.addGraph(function() {
       .tickFormat(d3.format(',.2f'));
   chart.y2Axis
       .tickFormat(d3.format(',.2f'));
-
   d3.select('#chart svg')
-      .datum(ddd)
+      .datum(populate())
       .call(chart);
-
+  d3.select('#chart svg').transition();
   nv.utils.windowResize(chart.update);
-
+if(ddd.length>0)++started;
   return chart;
-});
+  });
+ // d3.select('#chart svg').transition(); 
+
+}
+function start(){
+ // populate();
+  setTimeout('startGraph()',3000);
+  
+
+timer();
+}
+
+function timer(){
+ populate();
+ //tick();
+   //alert(ddd);
+
+  startGraph();
+      
+setTimeout('timer()',1500); 
+}
+
+
+function tick(){
+ ++xx;
+yy=Math.random()*100;
+dd.push({ x: xx, y: yy});
+ddd.push({key: "sup" , values: dd,color: "#00ff00"});
+}
+
+$(document).ready(start());
 
 /* Inspired by Lee Byron's test data generator. */
 function stream_layers(n, m, o) {

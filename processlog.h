@@ -21,6 +21,7 @@ static char days[7][10] =
 
 struct rule
 {
+  char name[32];
   int number;
   int hits;
   int action;

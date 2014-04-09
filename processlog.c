@@ -451,14 +451,15 @@ acl_load (char *path)
 	line[strlen (line) - 1] = '\0';
       t = strtok (line, s);
       r = malloc (sizeof (rule));
-
+       if(line[0]!='#'){
       for (i = 0; i < 15 && t != NULL; i++)
 	{
 	  switch (i)
 	    {
 	    case 0:
 	      r->number = rcount;	//yeah,I know-I don't care what number you put it in your rule file,it will process it in the order it reads it.
-	      break;
+	     snprintf(r->name,32,"[%d]%s",rcount,t);
+	     break;
 	    case 1:
 	      toLower (t);
 	      if (strncmp ("permit", t, 6) == 0)
@@ -609,6 +610,9 @@ acl_load (char *path)
 
 	  t = strtok (NULL, s);
 	}
+    }else{
+     invalid=1;
+    }
     endloop:
       if (!invalid)
 	{
@@ -618,9 +622,10 @@ acl_load (char *path)
 	}
       else
 	invalid = 0;
-    }
+       }
+    
   r = CIRCLEQ_FIRST (&rule_head);
-  printf ("\n");
+ // printf ("\n");
 }
 
 // int

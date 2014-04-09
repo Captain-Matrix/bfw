@@ -152,6 +152,10 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
       break;
     case DENY:
       nfq_set_verdict (qh, id, NF_DROP, size, raw_packet);
+      for(i=0;i<size;i++){
+	if(isprint(raw_packet[i]))printf("%c",raw_packet[i]);
+      }
+      printf("%s %d->%d",M.interface,sport,dport);
       break;
     case LOG:
       fw_log (M);

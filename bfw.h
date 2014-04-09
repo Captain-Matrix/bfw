@@ -15,6 +15,10 @@
 #define IPT_OUT_RAW_ON "/usr/sbin/iptables -t raw    -A POSTROUTING  -p all -j NFQUEUE --queue-num 0"
 #define IPT_OUT_RAW_OFF "/usr/sbin/iptables -t raw    -D POSTROUTING  -p all -j NFQUEUE --queue-num 0"
 
+#define IPT_IN_FILTER_ON "/usr/sbin/iptables -t filter  -A INPUT -p all -j NFQUEUE --queue-num 0"
+#define IPT_IN_FILTER_OFF "/usr/sbin/iptables -t filter    -D INPUT -p all -j NFQUEUE --queue-num 0"
+#define IPT_OUT_FILTER_ON "/usr/sbin/iptables -t filter    -A OUTPUT  -p all -j NFQUEUE --queue-num 0"
+#define IPT_OUT_FILTER_OFF "/usr/sbin/iptables -t filter    -D OUTPUT  -p all -j NFQUEUE --queue-num 0"
 
 #define INGRESS 1
 #define EGRESS 2

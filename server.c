@@ -107,15 +107,15 @@ web_table (int sz, char *buf)
 
       i += snprintf
 	(buf + strlen (buf), sz - i,
-	 "#%d#%d"
+	 "#%s#%d"
 	 "#%s#%s#%s#%s#%s"
-	 "#%s#%s#%d#%d "
+	 "#%s#%s#%d#%d#%d#%d "
 	 "#%d KB#%s#%s#%s"
 	 "#%s#%s!",
-	 r->number, r->hits, trim (action), trim (l3),
+	 r->name, r->hits, trim (action), trim (l3),
 	 trim (int_to_ip (r->src)), trim (int_to_ip (r->src_mask)),
 	 trim (int_to_ip (r->dest)), trim (int_to_ip (r->dest_mask)),
-	 trim (l4), r->s_port, r->d_port, (r->bw / 1024), trim (Dow),
+	 trim (l4), r->s_port,r->s_port_last, r->d_port,r->d_port_last, (r->bw / 1024), trim (Dow),
 	 trim (hour), trim (minute), trim (r->IF), trim (direction));
       //r = CIRCLEQ_NEXT (r, entries);
 
@@ -166,7 +166,7 @@ server (void *args)
 
   // Create and configure the server
   server = mg_create_server (NULL, request_handler);
-  mg_set_option (server, "listening_port", "9999");
+  mg_set_option (server, "listening_port", "172.16.10.1:9999");
 
   // Serve request. Hit Ctrl-C to terminate the program
   printf ("Starting on port %s\n", mg_get_option (server, "listening_port"));
