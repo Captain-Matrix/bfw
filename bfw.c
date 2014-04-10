@@ -31,8 +31,7 @@
 #include "processlog.h"
 #include "server.h"
 #include "mongoose/mongoose.h"
-static int debug = 0, rcount = -1, r_index = 0, mode = ENFORCING;
-static rule *r;
+static rinfo *info;
 static int
 nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	     struct nfq_data *nfa, void *data)
@@ -48,7 +47,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
   id = ntohl (ph->packet_id);
   if (ph)
     {
-      if (debug)
+      if (info->debug)
 	printf
 	  ("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
       fflush (stdout);
@@ -79,6 +78,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	}
       else
 	{
+
 	  upperlayers = (char *) raw_packet;
 	}
       if (ph->hook == NF_INET_PRE_ROUTING)
@@ -116,7 +116,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	    }
 	}
 
-      if (debug)
+      if (info->debug)
 	{
 	  for (i = 0, j = 0; i < M.size; i++, j++)
 	    {
@@ -136,14 +136,20 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 //        if(M.direction==INGRESS)printf("IN %s\n",M.interface);
 //        if(M.direction==EGRESS)printf("OUT %s\n",M.interface);
 //     //  printf("%s\n",M.interface);
-      if (mode == LEARNING)
-	fw_log (M);
-      else if (mode == ENFORCING)
+      if (info->mode == LEARNING)
+	{
+	  fw_log (M);
+	  verdict = check_rules (M);
+	}
+      else if (info->mode == ENFORCING)
 	{
 	  verdict = check_rules (M);
 	}
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    }
+  else
+    {
     }
   switch (verdict)
     {
@@ -152,12 +158,19 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
       break;
     case DENY:
       nfq_set_verdict (qh, id, NF_DROP, size, raw_packet);
-      for (i = 0; i < size; i++)
-	{
-	  if (isprint (raw_packet[i]))
-	    printf ("%c", raw_packet[i]);
+//       for (i = 0; i < size; i++)
+//      {
+//        if (isprint (raw_packet[i]))
+//          printf ("%c", raw_packet[i]);
+//      }
+      if (info->r->action == DENY)
+	{			//temp debugging
+	  printf ("%s->%s %s %d->%d\n",
+		  int_to_ip (ntohl (M.ip_header->saddr)),
+		  int_to_ip (ntohl (M.ip_header->daddr)), M.interface, sport,
+		  dport);
+
 	}
-      printf ("%s %d->%d", M.interface, sport, dport);
       break;
     case LOG:
       fw_log (M);
@@ -183,19 +196,21 @@ check_rules (meta_data M)
     s_port = ntohs (M.udp_header->source), d_port =
       ntohs (M.udp_header->dest);
 
-  for (r = rule_head.cqh_first, r_index = 0;
-       r != (void *) &rule_head; r = r->entries.cqe_next, r_index++)
+  for (info->r = rule_head.cqh_first, info->r_index = 0;
+       info->r != (void *) &rule_head;
+       info->r = info->r->entries.cqe_next, info->r_index++)
     {
-      // printf("%s %s --> %s %s / %s ? %s\n",int_to_ip(r->src),int_to_ip(r->src_mask),int_to_ip(r->dest),int_to_ip(r->dest_mask),int_to_ip(d_ip));
-      if (match (r->src, r->src_mask, s_ip)
-	  && match (r->dest, r->dest_mask, d_ip))
+      // printf("%s %s --> %s %s / %s ? %s\n",int_to_ip(info->r->src),int_to_ip(info->r->src_mask),int_to_ip(info->r->dest),int_to_ip(info->r->dest_mask),int_to_ip(d_ip));
+      if (match (info->r->src, info->r->src_mask, s_ip)
+	  && match (info->r->dest, info->r->dest_mask, d_ip))
 	{
-	  if (p_match (s_port, r->s_port, r->s_port_last)
-	      && p_match (d_port, r->d_port, r->d_port_last))
+	  if (p_match (s_port, info->r->s_port, info->r->s_port_last)
+	      && p_match (d_port, info->r->d_port, info->r->d_port_last))
 	    {
-	      r->hits++;
-	      r->bw += M.size;
-	      return r->action;	// in soviet russia you don't block programs ,programs block you!
+	      info->r->hits++;
+	      info->r->bw += M.size;
+
+	      return info->r->action;	// in soviet russia you don't block programs ,programs block you!
 	    }
 	}
 
@@ -226,8 +241,8 @@ start_fw ()
   int fd, rv;
   char buf[4096];
 
-  acl_load ("./test_rules");
-  // summarize (NULL);
+  acl_load (info, "./test_rules");
+  // summarize (info,NULL);
   if (!(learn_log = fopen ("./bfw_learn.log", "ab+")))
     {
       fprintf (stderr, "Error opening learning log file\n");
@@ -310,7 +325,7 @@ die (int code, char *msg)
 void
 CATCH_ALL (int signal)
 {
-  if (debug)
+  if (info->debug)
     printf
       ("\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^SIGNAL(%d) CAUGHT^^^^^^^^^^^^^^^^^^^^^^^^\n",
        signal);
@@ -332,7 +347,7 @@ CATCH_ALL (int signal)
       die (signal, "Program killed!!.");
       break;
     case SIGCHLD:
-      if (debug)
+      if (info->debug)
 	printf ("process terminated.\n");
       break;
     default:
@@ -346,7 +361,7 @@ void
 start_server ()
 {
   pthread_t tid = (pthread_t) 999;
-  pthread_create (&tid, 0, server, NULL);
+  pthread_create (&tid, 0, server, info);
   pthread_detach (tid);
 }
 
@@ -359,6 +374,10 @@ main ()
       die (1, "This program needs to run as root to function properly.\r\n");
 
     }
+  info = malloc (sizeof (info));
+  info->debug = 0;
+  info->rcount = -1;
+  info->r_index = 0;
   for (i; i < 32; i++)
     signal (i, CATCH_ALL);
   iptables_on ();

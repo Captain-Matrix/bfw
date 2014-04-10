@@ -6,8 +6,7 @@
 #include "utils.h"
 #include "processlog.h"
 #include "mongoose/mongoose.h"
-static int debug = 0, rcount = -1, r_index = 0;
-static rule *r;
+static rinfo *inf;
 void
 fserve (struct mg_connection *conn, char *file)
 {
@@ -27,7 +26,7 @@ fserve (struct mg_connection *conn, char *file)
 }
 
 void
-web_table (int sz, char *buf)
+web_table (rinfo * info, int sz, char *buf)
 {
   char l4[10];
   char l3[10];
@@ -41,13 +40,13 @@ web_table (int sz, char *buf)
 //               "#", "Hits", "ACTION", "L3", "SOURCE", "ACL MASK",
 //               "DEST", "ACL MASK", "L4", "SRC", "DEST", "BW", "DOW",
 //               "hour","minute", "IF", "DIRECTON");
-  for (r = rule_head.cqh_first, r_index = 0;
-       r->entries.cqe_next != (void *) &rule_head;
-       r = r->entries.cqe_next, r_index++)
+  for (info->r = rule_head.cqh_first, info->rcount = 0;
+       info->r->entries.cqe_next != (void *) &rule_head;
+       info->r = info->r->entries.cqe_next, info->rcount++)
     {
 
 
-      switch (r->L3)
+      switch (info->r->L3)
 	{
 	case 4:
 	  snprintf (l3, 10, "IPv4");
@@ -59,7 +58,7 @@ web_table (int sz, char *buf)
 	  snprintf (l3, 10, "OTHER");
 	  break;
 	}
-      switch (r->L4)
+      switch (info->r->L4)
 	{
 	case TCP:
 	  snprintf (l4, 10, "TCP");
@@ -73,19 +72,19 @@ web_table (int sz, char *buf)
 
 	}
 
-      if (r->dow == -1)
+      if (info->r->dow == -1)
 	snprintf (Dow, 10, "ANY");
       else
-	snprintf (Dow, 10, "%s", days[r->dow]);
-      if (r->hour == -1)
+	snprintf (Dow, 10, "%s", days[info->r->dow]);
+      if (info->r->hour == -1)
 	snprintf (hour, 10, "*");
       else
-	snprintf (hour, 10, "%d", r->hour);
-      if (r->minute == -1)
+	snprintf (hour, 10, "%d", info->r->hour);
+      if (info->r->minute == -1)
 	snprintf (minute, 10, "*");
       else
-	snprintf (minute, 10, "%d", r->minute);
-      switch (r->action)
+	snprintf (minute, 10, "%d", info->r->minute);
+      switch (info->r->action)
 	{
 	case PERMIT:
 	  snprintf (action, 10, "PERMIT");
@@ -100,9 +99,9 @@ web_table (int sz, char *buf)
 	  snprintf (action, 10, "DENY");
 
 	}
-      if (r->direction == EGRESS)
+      if (info->r->direction == EGRESS)
 	snprintf (direction, 10, "EGRESS");
-      else if (r->direction == INGRESS)
+      else if (info->r->direction == INGRESS)
 	snprintf (direction, 10, "INGRESS");
 
       i += snprintf
@@ -112,12 +111,14 @@ web_table (int sz, char *buf)
 	 "#%s#%s#%d#%d#%d#%d "
 	 "#%d KB#%s#%s#%s"
 	 "#%s#%s!",
-	 r->name, r->hits, trim (action), trim (l3),
-	 trim (int_to_ip (r->src)), trim (int_to_ip (r->src_mask)),
-	 trim (int_to_ip (r->dest)), trim (int_to_ip (r->dest_mask)),
-	 trim (l4), r->s_port, r->s_port_last, r->d_port, r->d_port_last,
-	 (r->bw / 1024), trim (Dow), trim (hour), trim (minute), trim (r->IF),
-	 trim (direction));
+	 info->r->name, info->r->hits, trim (action), trim (l3),
+	 trim (int_to_ip (info->r->src)),
+	 trim (int_to_ip (info->r->src_mask)),
+	 trim (int_to_ip (info->r->dest)),
+	 trim (int_to_ip (info->r->dest_mask)), trim (l4), info->r->s_port,
+	 info->r->s_port_last, info->r->d_port, info->r->d_port_last,
+	 (info->r->bw / 1024), trim (Dow), trim (hour), trim (minute),
+	 trim (info->r->IF), trim (direction));
       //r = CIRCLEQ_NEXT (r, entries);
 
 
@@ -143,7 +144,7 @@ request_handler (struct mg_connection *conn, enum mg_event ev)
 	}
       else if (strncmp ("/rules", conn->uri, 6) == 0)
 	{
-	  web_table (100000, &buf[0]);
+	  web_table (inf, 100000, &buf[0]);
 
 	  mg_send_data (conn, buf, strlen (buf));
 	  mg_printf_data (conn, "\r\n\r\n");
@@ -163,11 +164,12 @@ request_handler (struct mg_connection *conn, enum mg_event ev)
 void *
 server (void *args)
 {
+  inf = args;
   struct mg_server *server;
 
   // Create and configure the server
   server = mg_create_server (NULL, request_handler);
-  mg_set_option (server, "listening_port", "172.16.10.1:9999");
+  mg_set_option (server, "listening_port", "8989");
 
   // Serve request. Hit Ctrl-C to terminate the program
   printf ("Starting on port %s\n", mg_get_option (server, "listening_port"));

@@ -74,7 +74,8 @@ function populate(){
       var intbl="";
       intbl="<tbody><tr><td   style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   #</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">Hits</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">ACTION</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">L3</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         SOURCE</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">         ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">           DEST</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">       ACL MASK</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> L4</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">SRC-min</td><td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  SRC-max</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\"> DEST-min</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  DEST-max</td><td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">  BW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">     DOW</td> <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">hour</td><td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">minute</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">   IF</td>  <td style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\" contenteditable=\"true\">DIRECTON</td></tr>";
       var tmp;
-      ddd=[];
+     // ddd=[];
+
       for (var i=0;i<rows.length;i++){
 	cells=rows[i].split("#");
 	intbl+="<tr id=\""+i+"\">";
@@ -83,30 +84,31 @@ function populate(){
 	  if(j==2){
 	    		yy=parseInt(cells[j]);
 
-	    if(max<yy)max=yy;
-// 	     yy=(yy*(1000/max));
-	    ++xx;
-	if(xx==100){
-	  
-	  for(var k=0;k<50;k++){dd.shift();
-	
-	  dd.shift();
-	      dd.unshift({x:xx,y: yy});
---xx;
-	  }
-	}else{
-    dd.push({x:xx,y: yy});
-	}
+	   // if(max<yy)max=yy;
+ 	     //yy=(yy*(100/max));
+	dd.push({x:xx+i,y: yy,z: i});
+
+
 	  }
 	  intbl+="<td contenteditable=\"true\" style=\"border-collapse:collapse;border:1px solid green;background-color:black;color:lime;\"id=\""+i+j+"\">"+cells[j]+"</td>";
 	  
 	}
-	    		    ddd.push({key: "Rule "+i,values: dd});
+	      	ddd[i]={key: "Rule "+i,values: dd};
 
   d3.select('#chart svg').transition();
 
 	intbl+="</tr>";
       }
+
+      xx++;
+ /*     	    		    
+ if(xx==10){
+	      xx=0;
+	      dd.shift();
+	      ddd.shift();
+	ddd.pop();
+	dd.pop();
+	    }*/
 
       intbl+="</tbody>";
       
@@ -160,7 +162,7 @@ function timer(){
  //tick();
    //alert(ddd);
 
-  startGraph();
+  //startGraph();
       
 setTimeout('timer()',1500); 
 }
@@ -174,10 +176,6 @@ ddd.push({key: "sup" , values: dd,color: "#00ff00"});
 }
 
 $(document).ready(start());
-
-/* Inspired by Lee Byron's test data generator. */
-function stream_layers(n, m, o) {
-  if (arguments.length < 3) o = 0;
   function bump(a) {
     var x = 1 / (.1 + Math.random()),
         y = 2 * Math.random() - .5,
@@ -186,6 +184,10 @@ function stream_layers(n, m, o) {
       var w = (i / m - y) * z;
       a[i] += x * Math.exp(-w * w);
     }
+/* Inspired by Lee Byron's test data generator. */
+function stream_layers(n, m, o) {
+  if (arguments.length < 3) o = 0;
+
   }
   return d3.range(n).map(function() {
       var a = [], i;

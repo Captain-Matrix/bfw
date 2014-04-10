@@ -12,8 +12,7 @@
 #include "bfw.h"
 #include "utils.h"
 #include "processlog.h"
-int debug = 0, rcount = -1, r_index = 0;
-rule *r;
+
 void
 usage ()
 {
@@ -37,15 +36,15 @@ usage ()
 
 
 int
-more (int index)
+more (rinfo * info, int index)
 {
-  if (index > rcount)
+  if (index > info->rcount)
     {
-      // r_index = 0;
+      // info->r_index = 0;
       index = 0;
-      r = CIRCLEQ_FIRST (&rule_head);
+      info->r = CIRCLEQ_FIRST (&rule_head);
     }
-  int rows = r_index + ROWS;
+  int rows = info->r_index + ROWS;
 
 
   cls ();
@@ -53,17 +52,16 @@ more (int index)
   char l3[10];
   char Dow[10], hour[10], minute[10];
   char time[10];
-  struct tm *T;
 
   printf
     ("%3s %6s  %s  %15s %17s %15s %15s %3s %5s %5s %4s %8s %4s %5s  %7s\n",
      "#", "ACTION", "L3", "SOURCE", "ACL MASK", "DEST", "ACL MASK", "L4",
      "SRC", "DEST", "BW", "DOW", "TIME", "IF", "DIRECTON");
-  for (r = rule_head.cqh_first, r_index = 0;
-       r_index < rows && r != (void *) &rule_head;
-       r = r->entries.cqe_next, r_index++)
+  for (info->r = rule_head.cqh_first, info->r_index = 0;
+       info->r_index < rows && info->r != (void *) &rule_head;
+       info->r = info->r->entries.cqe_next, info->r_index++)
     {
-      switch (r->L3)
+      switch (info->r->L3)
 	{
 	case 4:
 	  snprintf (l3, 10, "IPv4");
@@ -75,7 +73,7 @@ more (int index)
 	  snprintf (l3, 10, "OTHER");
 	  break;
 	}
-      switch (r->L4)
+      switch (info->r->L4)
 	{
 	case TCP:
 	  snprintf (l4, 10, "TCP");
@@ -89,39 +87,40 @@ more (int index)
 
 	}
 
-      if (r->dow == -1)
+      if (info->r->dow == -1)
 	snprintf (Dow, 10, "ANY");
       else
-	snprintf (Dow, 10, "%s", days[r->dow]);
-      if (r->hour == -1)
+	snprintf (Dow, 10, "%s", days[info->r->dow]);
+      if (info->r->hour == -1)
 	snprintf (hour, 10, "*");
       else
-	snprintf (hour, 10, "%d", r->hour);
-      if (r->minute == -1)
+	snprintf (hour, 10, "%d", info->r->hour);
+      if (info->r->minute == -1)
 	snprintf (minute, 10, "*");
       else
-	snprintf (minute, 10, "%d", r->minute);
+	snprintf (minute, 10, "%d", info->r->minute);
       fprintf
 	(stdout, "%3d"
 	 " %6s  %s  %15s %15s %15s"
 	 " %15s %3s %5d %5d %4d %8s %2s:%2s "
 	 "%5s  %7s\n",
-	 r->number, r->action ? "PERMIT" : "DENY", l3, int_to_ip (r->src),
-	 int_to_ip (r->src_mask), int_to_ip (r->dest),
-	 int_to_ip (r->dest_mask), l4, r->s_port, r->d_port, 0,
-	 Dow, hour, minute, r->IF, r->direction ? "INGRESS" : "EGRESS");
+	 info->r->number, info->r->action ? "PERMIT" : "DENY", l3,
+	 int_to_ip (info->r->src), int_to_ip (info->r->src_mask),
+	 int_to_ip (info->r->dest), int_to_ip (info->r->dest_mask), l4,
+	 info->r->s_port, info->r->d_port, 0, Dow, hour, minute, info->r->IF,
+	 info->r->direction ? "INGRESS" : "EGRESS");
       //r = CIRCLEQ_NEXT (r, entries);
 
     }
-  if (r_index >= rcount)
+  if (info->r_index >= info->rcount)
     {
-      r_index = 0;
+      info->r_index = 0;
     }
   printf (PROMPT);
 }
 
 int
-write_rules (char *path)
+write_rules (rinfo * info, char *path)
 {
   rule *rtmp = CIRCLEQ_FIRST (&rule_head);
   int i = 0;
@@ -134,7 +133,7 @@ write_rules (char *path)
 
   if (!f)
     return 1;
-  for (i; i < rcount; i++)
+  for (i; i < info->rcount; i++)
     {
       switch (rtmp->L3)
 	{
@@ -190,7 +189,7 @@ write_rules (char *path)
 }
 
 void
-summarize (rule * rarg)
+summarize (rinfo * info, rule * rarg)
 {
   int i = 0;
   float avgm, hundred = 100, f_index = 0;
@@ -202,13 +201,14 @@ summarize (rule * rarg)
 //   else
 //     rtmp = rarg;
   printf ("Summarizing rules.... %d\n", rtmp->action);
-  avgm = hundred / rcount;
-  for (r_index, f_index; r_index < rcount; f_index++, r_index++)
+  avgm = hundred / info->rcount;
+  for (info->r_index, f_index; info->r_index < info->rcount;
+       f_index++, info->r_index++)
     {
 
       rtmp2 = CIRCLEQ_NEXT (rtmp, entries);
 
-      for (i = r_index; i < rcount; i++)
+      for (i = info->r_index; i < info->rcount; i++)
 	{
 
 	  if (rtmp->action ==
@@ -230,11 +230,11 @@ summarize (rule * rarg)
 
 	      free (rtmp2);
 	      rtmp2 = rtmp3;
-	      printf ("\r%.2f%% Done [%5d/%5d]", f_index * avgm, r_index,
-		      rcount);
+	      printf ("\r%.2f%% Done [%5d/%5d]", f_index * avgm,
+		      info->r_index, info->rcount);
 
-	      --rcount;
-	      avgm = hundred / rcount;
+	      --info->rcount;
+	      avgm = hundred / info->rcount;
 
 	    }
 	  else
@@ -246,33 +246,33 @@ summarize (rule * rarg)
       rtmp = CIRCLEQ_NEXT (rtmp, entries);
     }
   rtmp = CIRCLEQ_FIRST (&rule_head);
-  for (i = 0; i < rcount; i++)
+  for (i = 0; i < info->rcount; i++)
     {
       rtmp->number = i;
       rtmp = CIRCLEQ_NEXT (rtmp, entries);
     }
-  r = CIRCLEQ_FIRST (&rule_head);
+  info->r = CIRCLEQ_FIRST (&rule_head);
 }
 
 void
-empty ()
+empty (rinfo * info)
 {
   rule *r1, *r2;
   //r = CIRCLEQ_FIRST (&rule_head);
-  while (rcount > 0 && rule_head.cqh_first != (void *) &rule_head)
+  while (info->rcount > 0 && rule_head.cqh_first != (void *) &rule_head)
     {
       CIRCLEQ_REMOVE (&rule_head, rule_head.cqh_first, entries);
-      --rcount;
+      --info->rcount;
     }
-  printf ("Emptied rule FIFO[%d]\n", rcount);
+  printf ("Emptied rule FIFO[%d]\n", info->rcount);
 
 }
 
 void
-prompt ()
+prompt (rinfo * info)
 {
   char c, buf[256];
-  r = CIRCLEQ_FIRST (&rule_head);
+  info->r = CIRCLEQ_FIRST (&rule_head);
   usage ();
   while (c = gettc ())
     {
@@ -286,7 +286,7 @@ prompt ()
 	  usage ();
 	  break;
 	case ' ':
-	  more (r_index);
+	  more (info, info->r_index);
 	  break;
 	case 'w':
 	case 'W':
@@ -294,10 +294,10 @@ prompt ()
 	    ("\n%s\n Please enter the file path to write the rules to:\n",
 	     PROMPT);
 	  readin (256, &buf[0]);
-	  if (write_rules (buf))
+	  if (write_rules (info, buf))
 	    printf ("Encountered error while writing logs to file\n");
 	  else
-	    printf ("Successfully wrote %d rules to %s\n", rcount, buf);
+	    printf ("Successfully wrote %d rules to %s\n", info->rcount, buf);
 	  usage ();
 	  break;
 	case 'r':
@@ -306,8 +306,8 @@ prompt ()
 	    ("\n%s\n Please enter the file path where the desired rules/acls are located:\n",
 	     PROMPT);
 	  readin (256, &buf[0]);
-	  acl_load (buf);
-	  summarize (NULL);
+	  acl_load (info, buf);
+	  summarize (info, NULL);
 	  usage ();
 	  break;
 	case 'p':
@@ -316,7 +316,7 @@ prompt ()
 	    ("\n%s\n Please specify the path for the binary log file generated by bfw:\n",
 	     PROMPT);
 	  readin (256, &buf[0]);
-	  load (buf);
+	  load (info, buf);
 	  usage ();
 	  break;
 	default:
@@ -328,11 +328,11 @@ prompt ()
 }
 
 void
-load (char *path)
+load (rinfo * info, char *path)
 {
   meta_data M;
-  if (rcount > 0 && !CIRCLEQ_EMPTY (&rule_head))
-    empty ();
+  if (info->rcount > 0 && !CIRCLEQ_EMPTY (&rule_head))
+    empty (info);
 
   CIRCLEQ_INIT (&rule_head);
   memset (&M, 0, sizeof (meta_data));
@@ -370,33 +370,33 @@ load (char *path)
 	  dport = ntohs (M.udp_header->dest);
 	}
       /////////////////////////////////////////////////////////////////
-      r = malloc (sizeof (rule));
-      memset (r, 0, sizeof (rule));
-      ++rcount;
+      info->r = malloc (sizeof (rule));
+      memset (info->r, 0, sizeof (rule));
+      ++info->rcount;
 
-      r->direction = M.direction;
-      memcpy (r->IF, M.interface, IFNAMSIZ);
-      r->IF[IFNAMSIZ] = '\0';
+      info->r->direction = M.direction;
+      memcpy (info->r->IF, M.interface, IFNAMSIZ);
+      info->r->IF[IFNAMSIZ] = '\0';
       T = localtime (&M.stamp);
-      r->minute = T->tm_min;
-      r->hour = T->tm_hour;
-      r->dow = T->tm_wday;
-      r->s_port = sport;
-      r->d_port = dport;
-      r->L4 = ntohs (M.layer4);
-      r->src_mask = HOST;
-      r->dest_mask = HOST;
-      r->src = ntohl (M.ip_header->saddr);
-      r->dest = ntohl (M.ip_header->daddr);
-      r->L3 = M.ip_header->version;
-      r->action = PERMIT;
-      r->number = rcount;
-      CIRCLEQ_INSERT_TAIL (&rule_head, r, entries);
+      info->r->minute = T->tm_min;
+      info->r->hour = T->tm_hour;
+      info->r->dow = T->tm_wday;
+      info->r->s_port = sport;
+      info->r->d_port = dport;
+      info->r->L4 = ntohs (M.layer4);
+      info->r->src_mask = HOST;
+      info->r->dest_mask = HOST;
+      info->r->src = ntohl (M.ip_header->saddr);
+      info->r->dest = ntohl (M.ip_header->daddr);
+      info->r->L3 = M.ip_header->version;
+      info->r->action = PERMIT;
+      info->r->number = info->rcount;
+      CIRCLEQ_INSERT_TAIL (&rule_head, info->r, entries);
 
       /////////////////////////////////////////////////////////////////
 
 
-      if (debug)
+      if (info->debug)
 	{
 	  printf
 	    ("_____________________________________________________________\n");
@@ -427,12 +427,12 @@ load (char *path)
 }
 
 void
-acl_load (char *path)
+acl_load (rinfo * info, char *path)
 {
   if (!CIRCLEQ_EMPTY (&rule_head))
-    empty ();
+    empty (info);
   CIRCLEQ_INIT (&rule_head);
-  rcount = 0;
+  info->rcount = 0;
   FILE *f = fopen (path, "r");
   char line[1024];
   char buf[20], *t, *s = " ";
@@ -450,7 +450,7 @@ acl_load (char *path)
       if (line[strlen (line) - 1] == '\n')
 	line[strlen (line) - 1] = '\0';
       t = strtok (line, s);
-      r = malloc (sizeof (rule));
+      info->r = malloc (sizeof (rule));
       if (line[0] != '#')
 	{
 	  for (i = 0; i < 15 && t != NULL; i++)
@@ -458,114 +458,117 @@ acl_load (char *path)
 	      switch (i)
 		{
 		case 0:
-		  r->number = rcount;	//yeah,I know-I don't care what number you put it in your rule file,it will process it in the order it reads it.
-		  snprintf (r->name, 32, "[%d]%s", rcount, t);
+		  info->r->number = info->rcount;	//yeah,I know-I don't care what number you put it in your rule file,it will process it in the order it reads it.
+		  snprintf (info->r->name, 32, "[%d]%s", info->rcount, t);
 		  break;
 		case 1:
 		  toLower (t);
 		  if (strncmp ("permit", t, 6) == 0)
-		    r->action = PERMIT;
+		    info->r->action = PERMIT;
 		  else if (strncmp (t, "deny", 4) == 0)
-		    r->action = DENY;
+		    info->r->action = DENY;
 		  else if (strncmp (t, "log", 3) == 0)
-		    r->action = LOG;
+		    info->r->action = LOG;
 		  break;
 		case 2:
 		  toLower (t);
 		  if (strncmp (t, "ipv4", 4) == 0)
-		    r->L3 = 4;
+		    info->r->L3 = 4;
 		  break;
 		case 3:	//source ip
 		  //only ipv4 supported atm
 
-		  if (inet_pton (AF_INET, t, &(r->src)) < 1)
+		  if (inet_pton (AF_INET, t, &(info->r->src)) < 1)
 		    {
 		      invalid = 1;
 		      printf ("failed ip conversion [%s]\n", t);
 		      goto endloop;	//temporary solution
 
 		    }
-		  r->src = ntohl (r->src);
+		  info->r->src = ntohl (info->r->src);
 		  break;
 		case 4:	//source ip mask
-		  if (inet_pton (AF_INET, t, (void *) &r->src_mask) < 1)
+		  if (inet_pton (AF_INET, t, (void *) &info->r->src_mask) < 1)
 		    {
 		      invalid = 1;
 		      goto endloop;	//temporary solution
 
 		    }
-		  r->src_mask = ntohl (r->src_mask);
+		  info->r->src_mask = ntohl (info->r->src_mask);
 		  break;
 		case 5:	//destination ip
-		  if (inet_pton (AF_INET, t, (void *) &r->dest) < 1)
+		  if (inet_pton (AF_INET, t, (void *) &info->r->dest) < 1)
 		    {
 		      invalid = 1;
 		      goto endloop;	//temporary solution
 
 		    }
-		  r->dest = ntohl (r->dest);
+		  info->r->dest = ntohl (info->r->dest);
 		  break;
 		case 6:	//destination ip mask
 
-		  if (inet_pton (AF_INET, t, (void *) &r->dest_mask) < 1)
+		  if (inet_pton (AF_INET, t, (void *) &info->r->dest_mask) <
+		      1)
 		    {
 		      invalid = 1;
 		      goto endloop;	//temporary solution
 
 		    }
-		  r->dest_mask = ntohl (r->dest_mask);
+		  info->r->dest_mask = ntohl (info->r->dest_mask);
 		  break;
 		case 7:	//layer 4 type
 		  toLower (t);
 		  if (strncmp ("tcp", t, 3) == 0)
-		    r->L4 = TCP;
+		    info->r->L4 = TCP;
 		  else if (strncmp ("udp", t, 3) == 0)
-		    r->L4 = UDP;
+		    info->r->L4 = UDP;
 		  else
-		    r->L4 = OTHER;
+		    info->r->L4 = OTHER;
 		  break;
 		case 8:	//src port
 		  toLower (t);
 		  if (strncmp ("any", t, 3) == 0)
 		    {
-		      r->s_port = 0;
-		      r->s_port_last = r->s_port;
+		      info->r->s_port = 0;
+		      info->r->s_port_last = info->r->s_port;
 		    }
 		  else if (contains (t, '-'))
 		    {
-		      sscanf (t, "%hu-%hu", &r->s_port, &r->s_port_last);
+		      sscanf (t, "%hu-%hu", &info->r->s_port,
+			      &info->r->s_port_last);
 		    }
 		  else
 		    {
-		      sscanf (t, "%hu", &r->s_port);
-		      r->s_port_last = r->s_port;
+		      sscanf (t, "%hu", &info->r->s_port);
+		      info->r->s_port_last = info->r->s_port;
 		    }
 		  break;
 		case 9:	//dest port
 		  toLower (t);
 		  if (strncmp ("any", t, 3) == 0)	//only numeric ports allowed,well known services list TODO
 		    {
-		      r->d_port = 0;
-		      r->d_port_last = r->d_port;
+		      info->r->d_port = 0;
+		      info->r->d_port_last = info->r->d_port;
 		    }
 		  else if (contains (t, '-'))
 		    {
-		      sscanf (t, "%hu-%hu", &r->d_port, &r->d_port_last);
+		      sscanf (t, "%hu-%hu", &info->r->d_port,
+			      &info->r->d_port_last);
 		    }
 		  else
 		    {
-		      sscanf (t, "%hu", &r->d_port);
-		      r->d_port_last = r->d_port;
+		      sscanf (t, "%hu", &info->r->d_port);
+		      info->r->d_port_last = info->r->d_port;
 		    }
 		  break;
 		case 10:
-		  r->bw = 0;	//not yet supported bandwidth per rule.
+		  info->r->bw = 0;	//not yet supported bandwidth per rule.
 		  break;
 		case 11:	//dow/day of week
 		  toLower (t);
 		  if (strncmp ("any", t, 3) == 0)
 		    {
-		      r->dow = -1;
+		      info->r->dow = -1;
 		      break;
 		    }
 		  else
@@ -573,7 +576,7 @@ acl_load (char *path)
 		      for (j = 0; j < 7; j++)
 			{
 			  if (strncmp (t, days[j], strlen (t)) == 0)
-			    r->dow = j;
+			    info->r->dow = j;
 			  break;
 			}
 		    }
@@ -582,27 +585,27 @@ acl_load (char *path)
 		  j = contains (t, '*');
 		  if (j == 1)
 		    {
-		      r->hour = -1;
-		      r->minute = -1;
+		      info->r->hour = -1;
+		      info->r->minute = -1;
 		    }
 		  else if (j > 1)
 		    {
-		      sscanf (t + (j + 1), "%d:", &r->hour);
-		      r->minute = -1;
+		      sscanf (t + (j + 1), "%d:", &info->r->hour);
+		      info->r->minute = -1;
 		    }
 		  else
-		    sscanf (t, "%d:%d", &r->hour, &r->minute);	//obvious
+		    sscanf (t, "%d:%d", &info->r->hour, &info->r->minute);	//obvious
 		  break;
 		case 13:
 		  toLower (t);
-		  snprintf (r->IF, IFNAMSIZ, "%s", t);
+		  snprintf (info->r->IF, IFNAMSIZ, "%s", t);
 		  break;
 		case 14:
 		  toLower (t);
 		  if (strncmp ("egress", t, 6) == 0)
-		    r->direction = EGRESS;
+		    info->r->direction = EGRESS;
 		  else if (strncmp ("ingress", t, 7) == 0)
-		    r->direction = INGRESS;
+		    info->r->direction = INGRESS;
 		  break;
 		default:
 		  printf ("%d how the f*#$ did this happen??\n\a", i);
@@ -619,15 +622,15 @@ acl_load (char *path)
     endloop:
       if (!invalid)
 	{
-	  CIRCLEQ_INSERT_TAIL (&rule_head, r, entries);
-	  rcount++;
-	  printf ("\r%d Rules Loaded...", rcount);
+	  CIRCLEQ_INSERT_TAIL (&rule_head, info->r, entries);
+	  info->rcount++;
+	  printf ("\r%d Rules Loaded...", info->rcount);
 	}
       else
 	invalid = 0;
     }
 
-  r = CIRCLEQ_FIRST (&rule_head);
+  info->r = CIRCLEQ_FIRST (&rule_head);
   // printf ("\n");
 }
 
@@ -642,7 +645,7 @@ acl_load (char *path)
 //     {
 //       load (argv[1]);
 //       summarize (NULL);
-//       printf ("Loaded %d rules from %s\n", rcount, argv[1]);
+//       printf ("Loaded %d rules from %s\n", info->rcount, argv[1]);
 //       prompt ();
 //     }
 //   return 0;

@@ -43,9 +43,15 @@ struct rule
 };
 typedef struct rule rule;
 CIRCLEQ_HEAD (ncq, rule) rule_head;
+     struct rinfo
+     {
+       int debug, mode, rcount, r_index;
+       rule *r;
 
-     void load (char *p);
-     void acl_load (char *path);
-     void summarize (rule * rarg);
-     void web_table (int sz, char *tbl);
+     };
+     typedef struct rinfo rinfo;
+     void load (rinfo * info, char *p);
+     void acl_load (rinfo * info, char *path);
+     void summarize (rinfo * info, rule * rarg);
+     void web_table (rinfo * info, int sz, char *tbl);
 #endif

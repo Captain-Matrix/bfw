@@ -1,11 +1,11 @@
 #dummy_deny DENY  IPv4      172.16.10.3         0.0.0.0  74.125.227.0         0.0.0.255  TCP any any    0   Sunday  0:16  ens3   EGRESS
 Lvl3 PERMIT  IPv4      4.2.2.2    0.0.0.0  74.125.227.0         255.255.255.255  other any any    0   Sunday  0:16  ens3   EGRESS
-lo-in PERMIT  IPv4    1.2.3.4  255.255.255.255   127.0.0.1    0.255.255.255   TCP 9999  any 0 any 0:10 ens3 INGRESS
-lo-out PERMIT  IPv4    127.0.0.1 0.255.255.255   0.0.0.0 255.255.255.255 TCP any  9999 0 any 0:10 ens3 INGRESS
+lo-in PERMIT  IPv4    1.2.3.4  255.255.255.255   127.0.0.1    0.255.255.255   TCP any  any 0 any 0:10 ens3 INGRESS
+lo-out PERMIT  IPv4    127.0.0.1 0.255.255.255   1.2.3.4  255 255.255.255 TCP any  any 0 any 0:10 ens3 INGRESS
 webui-in PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 9999  any 0 any 0:10 ens3 INGRESS
 webui-out PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  9999 0 any 0:10 ens3 INGRESS
-webui-in PERMIT  IPv4    1.2.3.4  255.255.255.255   127.0.0.1    0.0.0.255   TCP 9999  any 0 any 0:10 ens3 INGRESS
-lo-webui-out PERMIT  IPv4    127.0.0.1    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  9999 0 any 0:10 ens3 INGRESS
+webui-in PERMIT  IPv4    1.2.3.4  255.255.255.255   127.0.0.1    0.0.0.255   TCP 8989  any 0 any 0:10 ens3 INGRESS
+lo-webui-out PERMIT  IPv4    127.0.0.1    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  8989 0 any 0:10 ens3 INGRESS
 http-in PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 80  any 0 any 0:10 ens3 INGRESS
 http-out PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  80 0 any 0:10 ens3 INGRESS
 https-in PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 443  any 0 any 0:10 ens3 INGRESS
