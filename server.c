@@ -10,17 +10,18 @@ static rinfo *inf;
 void
 fserve (struct mg_connection *conn, char *file)
 {
-  char line[1024];
+  char line[10000];
+  printf ("Serving %s\n", file);
   FILE *f = fopen (file, "r");
 
   if (f == NULL)
     return;
   while (!feof (f))
     {
-      fgets (line, 1024, f);
+      fgets (line, 10000, f);
       if (strlen (line) > 0)
 	{			// ;)
-	  mg_printf_data (conn, line);
+	  mg_send_data (conn, &line[0], strlen (line));
 	}
     }
 }
@@ -79,11 +80,11 @@ web_table (rinfo * info, int sz, char *buf)
       if (info->r->hour == -1)
 	snprintf (hour, 10, "*");
       else
-	snprintf (hour, 10, "%d", info->r->hour);
+	snprintf (hour, 10, "%u", info->r->hour);
       if (info->r->minute == -1)
 	snprintf (minute, 10, "*");
       else
-	snprintf (minute, 10, "%d", info->r->minute);
+	snprintf (minute, 10, "%u", info->r->minute);
       switch (info->r->action)
 	{
 	case PERMIT:
@@ -106,10 +107,10 @@ web_table (rinfo * info, int sz, char *buf)
 
       i += snprintf
 	(buf + strlen (buf), sz - i,
-	 "#%s#%d"
+	 "#%s#%u"
 	 "#%s#%s#%s#%s#%s"
-	 "#%s#%s#%d#%d#%d#%d "
-	 "#%d KB#%s#%s#%s"
+	 "#%s#%s#%u#%u#%u#%u "
+	 "#%u KB#%s#%s#%s"
 	 "#%s#%s!",
 	 info->r->name, info->r->hits, trim (action), trim (l3),
 	 trim (int_to_ip (info->r->src)),
@@ -128,6 +129,59 @@ web_table (rinfo * info, int sz, char *buf)
 // printf("%s\n",buf);
 }
 
+void
+apply (rinfo * info, struct mg_connection *conn)
+{
+  int sz = conn->content_len;
+  int i = 0, j = 0;
+  char *rules = malloc (sz);
+  char *tmp, buf[4096][1024];
+  rinfo *itmp, *tmp_info = malloc (sizeof (rinfo));
+  tmp_info->rcount = 0;
+  if (rules == NULL)
+    return;
+
+  memset (rules, 0, sz);
+  mg_get_var (conn, "rules", rules, sz);
+
+  tmp = strtok (rules, "!");
+  if (tmp == NULL)
+    return;
+
+  for (tmp, i = 0; tmp != NULL; i++)
+    {
+      snprintf (buf[i], 1024, "%s", tmp);
+      trim (&buf[i]);
+      tmp = strtok (NULL, "!");
+    }
+  for (j = 0; j < i; j++)
+    {
+      tmp_info->r = malloc (sizeof (rule));
+
+      printf ("%s\n", buf[j]);
+      if (!string_to_rule (tmp_info, tmp_info->r, " ", &buf[j][0]))
+	{
+
+	  CIRCLEQ_INSERT_TAIL (&rule_head, tmp_info->r, entries);
+	  tmp_info->rcount++;
+
+
+	}
+      else
+	{
+	  free (tmp_info->r);
+	  printf ("Unable to load %s\n", buf[j]);
+	}
+    }
+
+
+
+  itmp = info;
+  info = tmp_info;
+  empty (itmp);
+
+}
+
 static int
 request_handler (struct mg_connection *conn, enum mg_event ev)
 {
@@ -141,6 +195,8 @@ request_handler (struct mg_connection *conn, enum mg_event ev)
       if (strncmp (conn->uri, "/", strlen (conn->uri)) == 0)
 	{
 	  fserve (conn, "./index.html");
+	  return MG_TRUE;
+
 	}
       else if (strncmp ("/rules", conn->uri, 6) == 0)
 	{
@@ -149,6 +205,12 @@ request_handler (struct mg_connection *conn, enum mg_event ev)
 	  mg_send_data (conn, buf, strlen (buf));
 	  mg_printf_data (conn, "\r\n\r\n");
 	  //printf ("~~~~~%s~~~~~~~\n", buf);
+	  return MG_TRUE;
+	}
+      else if (strncmp ("/apply", conn->uri, 6) == 0)
+	{
+
+	  // apply(inf,conn);
 	  return MG_TRUE;
 	}
       result = MG_TRUE;

@@ -34,7 +34,6 @@ usage ()
   fflush (stdout);
 }
 
-
 int
 more (rinfo * info, int index)
 {
@@ -94,11 +93,11 @@ more (rinfo * info, int index)
       if (info->r->hour == -1)
 	snprintf (hour, 10, "*");
       else
-	snprintf (hour, 10, "%d", info->r->hour);
+	snprintf (hour, 10, "%u", info->r->hour);
       if (info->r->minute == -1)
 	snprintf (minute, 10, "*");
       else
-	snprintf (minute, 10, "%d", info->r->minute);
+	snprintf (minute, 10, "%u", info->r->minute);
       fprintf
 	(stdout, "%3d"
 	 " %6s  %s  %15s %15s %15s"
@@ -167,11 +166,11 @@ write_rules (rinfo * info, char *path)
       if (rtmp->hour == -1)
 	snprintf (hour, 10, "*");
       else
-	snprintf (hour, 10, "%d", rtmp->hour);
+	snprintf (hour, 10, "%u", rtmp->hour);
       if (rtmp->minute == -1)
 	snprintf (minute, 10, "*");
       else
-	snprintf (minute, 10, "%d", rtmp->minute);
+	snprintf (minute, 10, "%u", rtmp->minute);
       fprintf
 	(f, "%3d"
 	 " %6s  %s  %15s %15s %15s"
@@ -200,7 +199,7 @@ summarize (rinfo * info, rule * rarg)
   rtmp = CIRCLEQ_FIRST (&rule_head);
 //   else
 //     rtmp = rarg;
-  printf ("Summarizing rules.... %d\n", rtmp->action);
+  printf ("Summarizing rules.... %u\n", rtmp->action);
   avgm = hundred / info->rcount;
   for (info->r_index, f_index; info->r_index < info->rcount;
        f_index++, info->r_index++)
@@ -264,7 +263,7 @@ empty (rinfo * info)
       CIRCLEQ_REMOVE (&rule_head, rule_head.cqh_first, entries);
       --info->rcount;
     }
-  printf ("Emptied rule FIFO[%d]\n", info->rcount);
+  printf ("Emptied rule FIFO[%u]\n", info->rcount);
 
 }
 
@@ -297,7 +296,7 @@ prompt (rinfo * info)
 	  if (write_rules (info, buf))
 	    printf ("Encountered error while writing logs to file\n");
 	  else
-	    printf ("Successfully wrote %d rules to %s\n", info->rcount, buf);
+	    printf ("Successfully wrote %u rules to %s\n", info->rcount, buf);
 	  usage ();
 	  break;
 	case 'r':
@@ -403,7 +402,7 @@ load (rinfo * info, char *path)
 	  if (M.direction == EGRESS)
 	    {			//egress    
 
-	      printf ("\t\t%s \t\tEGRESS: %s\tL4:%0x\n\t%s:%d ---> %s:%d\n",
+	      printf ("\t\t%s \t\tEGRESS: %s\tL4:%0x\n\t%s:%u ---> %s:%u\n",
 		      ctime (&M.stamp), M.interface, ntohs (M.layer4),
 		      int_to_ip (ntohl (M.ip_header->saddr)), sport,
 		      int_to_ip (ntohl (M.ip_header->daddr)), dport);
@@ -415,7 +414,7 @@ load (rinfo * info, char *path)
 	    {			//ingress
 
 
-	      printf ("\t\t%s \t\tINGRESS: %s\tL4:%0x\n\t%s:%d ---> %s:%d\n",
+	      printf ("\t\t%s \t\tINGRESS: %s\tL4:%0x\n\t%s:%u ---> %s:%u\n",
 		      ctime (&M.stamp), M.interface, ntohs (M.layer4),
 		      int_to_ip (ntohl (M.ip_header->saddr)), sport,
 		      int_to_ip (ntohl (M.ip_header->daddr)), dport);
@@ -426,6 +425,201 @@ load (rinfo * info, char *path)
 
 }
 
+int
+string_to_v4 (uint32_t * v4src, char *string)
+{
+  toLower (string);
+  uint32_t v4;
+  char str[INET6_ADDRSTRLEN];
+  if (strncmp ("any", string, 3) == 0)
+    {
+      v4 = (uint32_t) (~0);
+
+    }
+  else if (strncmp ("host", string, 4) == 0)
+    {
+      v4 = 0;
+    }
+  else if (inet_pton (AF_INET, string, &(v4)) < 1)
+    {
+
+      printf ("failed ip conversion [%s]\n", string);
+      return 1;
+
+    }
+  v4 = ntohl (v4);
+
+
+
+
+
+
+
+  *v4src = v4;
+  return 0;
+}
+
+int
+string_to_port (uint16_t * mi, uint16_t * ma, char *string)
+{
+  uint16_t min, max;
+  toLower (string);
+  int dash = contains (string, '-');
+  if (strncmp ("any", string, 3) == 0)
+    {
+      min = 0;
+      max = min;
+    }
+  else if (dash > 1 && dash < strlen (string) - 1)
+    {
+      sscanf (string, "%hu-%hu", &min, &max);
+    }
+  else
+    {
+      sscanf (string, "%hu", &min);
+      max = min;
+    }
+  if (min > max)
+    return 1;
+
+  *mi = min;
+  *ma = max;
+  return 0;
+}
+
+int
+string_to_rule (rinfo * info, rule * r, char *separator, char *line)
+{
+  char buf[20], *t;
+  struct sockaddr_in sa;
+  int i, j;
+  t = strtok (line, separator);
+  if (line[0] != '#')		//comments
+    {
+      for (i = 0; i < 15 && t != NULL; i++)
+	{
+	  switch (i)
+	    {
+	    case 0:
+	      info->r->number = info->rcount;	//yeah,I know-I don't care what number you put it in your rule file,it will process it in the order it reads it.
+	      snprintf (info->r->name, 32, "[%u]%s", info->rcount, t);
+	      break;
+	    case 1:
+	      toLower (t);
+	      if (strncmp ("permit", t, 6) == 0)
+		info->r->action = PERMIT;
+	      else if (strncmp (t, "deny", 4) == 0)
+		info->r->action = DENY;
+	      else if (strncmp (t, "log", 3) == 0)
+		info->r->action = LOG;
+	      break;
+	    case 2:
+	      toLower (t);
+	      if (strncmp (t, "ipv4", 4) == 0)
+		info->r->L3 = 4;
+	      break;
+	    case 3:		//source ip
+	      //only ipv4 supported atm
+
+	      if (string_to_v4 (&info->r->src, t))
+		return 1;
+
+
+	      break;
+	    case 4:		//source ip mask
+	      if (string_to_v4 (&info->r->src_mask, t))
+		return 1;
+	      break;
+	    case 5:		//destination ip
+	      if (string_to_v4 (&info->r->dest, t))
+		return 1;
+	      break;
+	    case 6:		//destination ip mask
+	      if (string_to_v4 (&info->r->dest_mask, t))
+		return 1;
+	      break;
+	    case 7:		//layer 4 type
+	      toLower (t);
+	      if (strncmp ("tcp", t, 3) == 0)
+		info->r->L4 = TCP;
+	      else if (strncmp ("udp", t, 3) == 0)
+		info->r->L4 = UDP;
+	      else
+		info->r->L4 = OTHER;
+	      break;
+	    case 8:		//src port
+	      if (string_to_port (&info->r->s_port, &info->r->s_port_last, t))
+		return 1;
+	      break;
+	    case 9:		//dest port
+	      if (string_to_port (&info->r->d_port, &info->r->d_port_last, t))
+		return 1;
+	      break;
+	    case 10:
+	      info->r->bw = 0;	//not yet supported bandwidth per rule.
+	      break;
+	    case 11:		//dow/day of week
+	      toLower (t);
+	      if (strncmp ("any", t, 3) == 0)
+		{
+		  info->r->dow = -1;
+		  break;
+		}
+	      else
+		{
+		  for (j = 0; j < 7; j++)
+		    {
+		      if (strncmp (t, days[j], strlen (t)) == 0)
+			info->r->dow = j;
+		      break;
+		    }
+		}
+	      break;
+	    case 12:
+	      j = contains (t, '*');
+	      if (j == 1)
+		{
+		  info->r->hour = -1;
+		  info->r->minute = -1;
+		}
+	      else if (j > 1)
+		{
+		  sscanf (t + (j + 1), "%u:", &info->r->hour);
+		  info->r->minute = -1;
+		}
+	      else
+		sscanf (t, "%u:%u", &info->r->hour, &info->r->minute);	//obvious
+	      break;
+	    case 13:
+	      toLower (t);
+	      snprintf (info->r->IF, IFNAMSIZ, "%s", t);
+	      break;
+	    case 14:
+	      toLower (t);
+	      if (strncmp ("egress", t, 6) == 0)
+		info->r->direction = EGRESS;
+	      else if (strncmp ("ingress", t, 7) == 0)
+		info->r->direction = INGRESS;
+	      break;
+	    default:
+	      printf ("%u how the f*#$ did this happen??\n\a", i);
+	      break;
+	    }
+
+	  t = strtok (NULL, separator);
+	}
+    }
+  else
+    {
+      return 1;
+
+    }
+
+
+  return 0;
+
+}
+
 void
 acl_load (rinfo * info, char *path)
 {
@@ -433,11 +627,9 @@ acl_load (rinfo * info, char *path)
     empty (info);
   CIRCLEQ_INIT (&rule_head);
   info->rcount = 0;
+  int sz;
   FILE *f = fopen (path, "r");
   char line[1024];
-  char buf[20], *t, *s = " ";
-  struct sockaddr_in sa;
-  int i, j, invalid = 0;
   if (!f)
     {
       fprintf (stderr, "Unable to open rule file at %s\n", path);
@@ -446,192 +638,37 @@ acl_load (rinfo * info, char *path)
 
   while (!feof (f))
     {
+      memset (&line, 0, 1024);
       fgets (line, 1024, f);
-      if (line[strlen (line) - 1] == '\n')
-	line[strlen (line) - 1] = '\0';
-      t = strtok (line, s);
-      info->r = malloc (sizeof (rule));
-      if (line[0] != '#')
+      sz = strlen (line);
+      if (sz > 20 && line[0] != '#')
 	{
-	  for (i = 0; i < 15 && t != NULL; i++)
+	  if (line[strlen (line) - 1] == '\n')
+	    line[strlen (line) - 1] = '\0';
+	  info->r = malloc (sizeof (rule));
+
+	  if (!string_to_rule (info, info->r, " ", &line[0]))
 	    {
-	      switch (i)
-		{
-		case 0:
-		  info->r->number = info->rcount;	//yeah,I know-I don't care what number you put it in your rule file,it will process it in the order it reads it.
-		  snprintf (info->r->name, 32, "[%d]%s", info->rcount, t);
-		  break;
-		case 1:
-		  toLower (t);
-		  if (strncmp ("permit", t, 6) == 0)
-		    info->r->action = PERMIT;
-		  else if (strncmp (t, "deny", 4) == 0)
-		    info->r->action = DENY;
-		  else if (strncmp (t, "log", 3) == 0)
-		    info->r->action = LOG;
-		  break;
-		case 2:
-		  toLower (t);
-		  if (strncmp (t, "ipv4", 4) == 0)
-		    info->r->L3 = 4;
-		  break;
-		case 3:	//source ip
-		  //only ipv4 supported atm
 
-		  if (inet_pton (AF_INET, t, &(info->r->src)) < 1)
-		    {
-		      invalid = 1;
-		      printf ("failed ip conversion [%s]\n", t);
-		      goto endloop;	//temporary solution
+	      CIRCLEQ_INSERT_TAIL (&rule_head, info->r, entries);
+	      info->rcount++;
+	      printf ("\r%i Rules Loaded...", info->rcount);
+	      //  printf("converted %s\n",int_to_ip(info->r->src));
 
-		    }
-		  info->r->src = ntohl (info->r->src);
-		  break;
-		case 4:	//source ip mask
-		  if (inet_pton (AF_INET, t, (void *) &info->r->src_mask) < 1)
-		    {
-		      invalid = 1;
-		      goto endloop;	//temporary solution
-
-		    }
-		  info->r->src_mask = ntohl (info->r->src_mask);
-		  break;
-		case 5:	//destination ip
-		  if (inet_pton (AF_INET, t, (void *) &info->r->dest) < 1)
-		    {
-		      invalid = 1;
-		      goto endloop;	//temporary solution
-
-		    }
-		  info->r->dest = ntohl (info->r->dest);
-		  break;
-		case 6:	//destination ip mask
-
-		  if (inet_pton (AF_INET, t, (void *) &info->r->dest_mask) <
-		      1)
-		    {
-		      invalid = 1;
-		      goto endloop;	//temporary solution
-
-		    }
-		  info->r->dest_mask = ntohl (info->r->dest_mask);
-		  break;
-		case 7:	//layer 4 type
-		  toLower (t);
-		  if (strncmp ("tcp", t, 3) == 0)
-		    info->r->L4 = TCP;
-		  else if (strncmp ("udp", t, 3) == 0)
-		    info->r->L4 = UDP;
-		  else
-		    info->r->L4 = OTHER;
-		  break;
-		case 8:	//src port
-		  toLower (t);
-		  if (strncmp ("any", t, 3) == 0)
-		    {
-		      info->r->s_port = 0;
-		      info->r->s_port_last = info->r->s_port;
-		    }
-		  else if (contains (t, '-'))
-		    {
-		      sscanf (t, "%hu-%hu", &info->r->s_port,
-			      &info->r->s_port_last);
-		    }
-		  else
-		    {
-		      sscanf (t, "%hu", &info->r->s_port);
-		      info->r->s_port_last = info->r->s_port;
-		    }
-		  break;
-		case 9:	//dest port
-		  toLower (t);
-		  if (strncmp ("any", t, 3) == 0)	//only numeric ports allowed,well known services list TODO
-		    {
-		      info->r->d_port = 0;
-		      info->r->d_port_last = info->r->d_port;
-		    }
-		  else if (contains (t, '-'))
-		    {
-		      sscanf (t, "%hu-%hu", &info->r->d_port,
-			      &info->r->d_port_last);
-		    }
-		  else
-		    {
-		      sscanf (t, "%hu", &info->r->d_port);
-		      info->r->d_port_last = info->r->d_port;
-		    }
-		  break;
-		case 10:
-		  info->r->bw = 0;	//not yet supported bandwidth per rule.
-		  break;
-		case 11:	//dow/day of week
-		  toLower (t);
-		  if (strncmp ("any", t, 3) == 0)
-		    {
-		      info->r->dow = -1;
-		      break;
-		    }
-		  else
-		    {
-		      for (j = 0; j < 7; j++)
-			{
-			  if (strncmp (t, days[j], strlen (t)) == 0)
-			    info->r->dow = j;
-			  break;
-			}
-		    }
-		  break;
-		case 12:
-		  j = contains (t, '*');
-		  if (j == 1)
-		    {
-		      info->r->hour = -1;
-		      info->r->minute = -1;
-		    }
-		  else if (j > 1)
-		    {
-		      sscanf (t + (j + 1), "%d:", &info->r->hour);
-		      info->r->minute = -1;
-		    }
-		  else
-		    sscanf (t, "%d:%d", &info->r->hour, &info->r->minute);	//obvious
-		  break;
-		case 13:
-		  toLower (t);
-		  snprintf (info->r->IF, IFNAMSIZ, "%s", t);
-		  break;
-		case 14:
-		  toLower (t);
-		  if (strncmp ("egress", t, 6) == 0)
-		    info->r->direction = EGRESS;
-		  else if (strncmp ("ingress", t, 7) == 0)
-		    info->r->direction = INGRESS;
-		  break;
-		default:
-		  printf ("%d how the f*#$ did this happen??\n\a", i);
-		  break;
-		}
-
-	      t = strtok (NULL, s);
 	    }
+	  else
+	    {
+	      free (info->r);
+	      printf ("Unable to load %s\n", line);
+	    }
+
 	}
-      else
-	{
-	  invalid = 1;
-	}
-    endloop:
-      if (!invalid)
-	{
-	  CIRCLEQ_INSERT_TAIL (&rule_head, info->r, entries);
-	  info->rcount++;
-	  printf ("\r%d Rules Loaded...", info->rcount);
-	}
-      else
-	invalid = 0;
     }
 
   info->r = CIRCLEQ_FIRST (&rule_head);
   // printf ("\n");
+
+
 }
 
 // int
@@ -645,7 +682,7 @@ acl_load (rinfo * info, char *path)
 //     {
 //       load (argv[1]);
 //       summarize (NULL);
-//       printf ("Loaded %d rules from %s\n", info->rcount, argv[1]);
+//       printf ("Loaded %u rules from %s\n", info->rcount, argv[1]);
 //       prompt ();
 //     }
 //   return 0;

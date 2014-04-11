@@ -45,7 +45,8 @@ typedef struct rule rule;
 CIRCLEQ_HEAD (ncq, rule) rule_head;
      struct rinfo
      {
-       int debug, mode, rcount, r_index;
+       unsigned int debug, mode;
+       int rcount, r_index;
        rule *r;
 
      };

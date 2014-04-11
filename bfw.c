@@ -53,7 +53,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
       fflush (stdout);
       M.size = size;
       M.stamp = time (NULL);
-      // printf("%d %d %d %d\n" ,nfq_get_physindev(nfa),nfq_get_physoutdev(nfa),nfq_get_indev(nfa),nfq_get_outdev(nfa));
+      // printf("%u %u %u %u\n" ,nfq_get_physindev(nfa),nfq_get_physoutdev(nfa),nfq_get_indev(nfa),nfq_get_outdev(nfa));
       ifout = nfq_get_outdev (nfa);
       ifin = nfq_get_indev (nfa);
       ifpin = nfq_get_physindev (nfa);
@@ -165,7 +165,7 @@ nf_callback (struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 //      }
       if (info->r->action == DENY)
 	{			//temp debugging
-	  printf ("%s->%s %s %d->%d\n",
+	  printf ("%s->%s %s %u->%u\n",
 		  int_to_ip (ntohl (M.ip_header->saddr)),
 		  int_to_ip (ntohl (M.ip_header->daddr)), M.interface, sport,
 		  dport);
@@ -327,7 +327,7 @@ CATCH_ALL (int signal)
 {
   if (info->debug)
     printf
-      ("\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^SIGNAL(%d) CAUGHT^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      ("\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^SIGNAL(%u) CAUGHT^^^^^^^^^^^^^^^^^^^^^^^^\n",
        signal);
   fflush (stdout);
   switch (signal)

@@ -35,11 +35,11 @@ struct nfq_q_handle *qh;
 static FILE *learn_log;
 struct meta_data
 {
-  int size;			//packet size
-  int direction;		//packet direction
-  int layer4;			//Transport layer protocol
+  unsigned int size;		//packet size
+  unsigned int direction;	//packet direction
+  unsigned int layer4;		//Transport layer protocol
   time_t stamp;			//unix time stamp
-  char interface[IFNAMSIZ];
+  unsigned char interface[IFNAMSIZ];
   struct iphdr *ip_header;
   struct tcphdr *tcp_header;
   struct udphdr *udp_header;
