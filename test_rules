@@ -1,21 +1,54 @@
+#comments have to begin with a # no whitespace allowed at begining of line
+#just a brief description of how the access control masks work:
+#if you're familiar with cisco acls then this is exactly how they work
+#this firewall aims to protect subnets than specific hosts or range of hosts
+#acl masks are basically the inverse of a subnet mask , in binary 0 means that corresponding bit in
+#the masked ip needs to match ,1 means we don't care if that bit matches or not 
+#so you can substitute "any" for 255.255.255.255 (or all 1's in binary)
+#or "host" aka 0.0.0.0 (all 0's ,every bit needs to match)
+#
+########################################################################
+#example to block ip 172.16.10.3 from reaching one of google's /24 subnets 74.125.227.0 from any source and destination tcp port
 #dummy_deny DENY  IPv4      172.16.10.3         0.0.0.0  74.125.227.0         0.0.0.255  TCP any any    0   Sunday  0:16  ens3   EGRESS
+
+#following is to permit incoming packets from level3's well known dns resolver to any host and any port
 Lvl3 PERMIT  IPv4      4.2.2.2    0.0.0.0  74.125.227.0         255.255.255.255  other any any    0   Sunday  0:16  ens3   EGRESS
+
+#following 2 rules permit all local/loopback traffic
 lo-in PERMIT  IPv4    1.2.3.4  255.255.255.255   127.0.0.1    0.255.255.255   TCP any  any 0 any 0:10 ens3 INGRESS
-lo-out PERMIT  IPv4    127.0.0.1 0.255.255.255   1.2.3.4  255 255.255.255 TCP any  any 0 any 0:10 ens3 INGRESS
-webui-in PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 9999  any 0 any 0:10 ens3 INGRESS
-webui-out PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  9999 0 any 0:10 ens3 INGRESS
-webui-in PERMIT  IPv4    1.2.3.4  255.255.255.255   127.0.0.1    0.0.0.255   TCP 8989  any 0 any 0:10 ens3 INGRESS
-lo-webui-out PERMIT  IPv4    127.0.0.1    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  8989 0 any 0:10 ens3 INGRESS
+lo-out PERMIT  IPv4    127.0.0.1 0.255.255.255   1.2.3.4  255.255.255.255 TCP any  any 0 any 0:10 ens3 INGRESS
+
+#following 4 rules permit traffic to and from the web user interface instance in your browser  on loopback and ens3 interface
+#since the top two rules permit all traffic the last 2 of the following are just for demonstration,it stops looking after the first match
+webui-in PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 8989  any 0 any 0:10 ens3 INGRESS
+webui-out PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  8989 0 any 0:10 ens3 INGRESS
+lo-webui-in PERMIT  IPv4    1.2.3.4  255.255.255.255   127.0.0.1    0.0.0.255   TCP 8989  any 0 any 0:10 lo INGRESS
+lo-webui-out PERMIT  IPv4    127.0.0.1    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  8989 0 any 0:10 lo INGRESS
+
+####################################################################################################################
+#next two rules permit http traffic to and from subnet 172.16.10.0/24 to any host
 http-in PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 80  any 0 any 0:10 ens3 INGRESS
 http-out PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  80 0 any 0:10 ens3 INGRESS
+
+#next two do the same except for https/port 443 
 https-in PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 443  any 0 any 0:10 ens3 INGRESS
 https-out PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  443 0 any 0:10 ens3 INGRESS
+
+#next 6 rules should be self explanatory
 ssh-in PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 23  any 0 any 0:10 ens3 INGRESS
-ssh-out PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  23 0 any 0:10 ens3 INGRESS
+ssh-out PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0   255.255.255.255 TCP any  23 0 any 0:10 ens3 INGRESS
 dns-in PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 53  any 0 any 0:10 ens3 INGRESS
-dns-out PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0 255.255.255.255 TCP any  53 0 any 0:10 ens3 INGRESS
+dns-out PERMIT  IPv4    172.16.10.3    0.0.0.255   0.0.0.0   255.255.255.255 TCP any  53 0 any 0:10 ens3 INGRESS
 irc-in PERMIT  IPv4    1.2.3.4  255.255.255.255   172.16.10.3    0.0.0.255   TCP 6667-7000  any 0 any 0:10 ens3 INGRESS
-irc-out PERMIT  IPv4    172.16.10.3    0.0.0.255 1.2.3.4  255.255.255.255      TCP any 6667-7000   0 any 0:10 ens3 INGRESS
+irc-out PERMIT  IPv4    172.16.10.3    0.0.0.255 1.2.3.4   255.255.255.255      TCP any 6667-7000   0 any 0:10 ens3 INGRESS
+
+#next 2 rules permit all traffic to and from subnet 192.168.2.0/24
+#the two after permit all traffic to and from subnet 172.168.10.0/24
+#while the last one permits all traffic to and from anywhere
+#these rules are here for testing and development purposes and until 
+#the firewall generates or you manually enter the appropriate PERMIT rules
+#default policy should be to drop everything that's not explicitly permitted.
+########################################################################################################################
 hts-any-out PERMIT  IPv4     192.168.2.0     0.0.0.255     1.2.3.4    255.255.255.255 TCP  any  any  0 any 0:0 ens3 EGRESS
 any-hts-in PERMIT  IPv4     0.0.0.0     255.255.255.255     192.168.2.0    0.0.0.255 TCP  any  any  0 any 0:0 ens3 EGRESS
 any-out PERMIT  IPv4     172.16.10.3     0.0.0.255     1.2.3.4    255.255.255.255 TCP  any  any  0 any 0:0 ens3 EGRESS

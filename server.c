@@ -140,11 +140,14 @@ apply (rinfo * info, struct mg_connection *conn)
   tmp_info->rcount = 0;
   if (rules == NULL)
     return;
+  CIRCLEQ_HEAD (ncq, rule) rule_head;
 
   memset (rules, 0, sz);
   mg_get_var (conn, "rules", rules, sz);
 
   tmp = strtok (rules, "!");
+  snprintf (buf[i], 1024, "%s", tmp);
+
   if (tmp == NULL)
     return;
 
@@ -158,27 +161,24 @@ apply (rinfo * info, struct mg_connection *conn)
     {
       tmp_info->r = malloc (sizeof (rule));
 
-      printf ("%s\n", buf[j]);
-      if (!string_to_rule (tmp_info, tmp_info->r, " ", &buf[j][0]))
-	{
-
-	  CIRCLEQ_INSERT_TAIL (&rule_head, tmp_info->r, entries);
-	  tmp_info->rcount++;
-
-
-	}
-      else
-	{
-	  free (tmp_info->r);
-	  printf ("Unable to load %s\n", buf[j]);
-	}
+      printf ("~%s~\n", buf[j]);
+// if(!string_to_rule(tmp_info,tmp_info->r," ",&buf[j][0])){
+//   
+//     CIRCLEQ_INSERT_TAIL (&rule_head, tmp_info->r, entries);
+//        tmp_info->rcount++;
+//       
+// 
+// }else{
+//  free(tmp_info->r); 
+//   printf("Unable to load %s\n",buf[j]);
+// }
     }
 
 
 
-  itmp = info;
-  info = tmp_info;
-  empty (itmp);
+//      itmp=info;
+//      info=tmp_info;
+//         empty(itmp);
 
 }
 
@@ -210,7 +210,7 @@ request_handler (struct mg_connection *conn, enum mg_event ev)
       else if (strncmp ("/apply", conn->uri, 6) == 0)
 	{
 
-	  // apply(inf,conn);
+	  //  apply(inf,conn);
 	  return MG_TRUE;
 	}
       result = MG_TRUE;
